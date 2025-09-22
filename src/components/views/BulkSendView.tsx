@@ -213,11 +213,17 @@ export const BulkSendView = () => {
 
       addDebugLog(`Resposta da Edge Function: ${JSON.stringify(data)}`);
       
-      if (data?.success) {
-        addDebugLog("✅ Teste enviado com sucesso via Edge Function");
+      if (data?.success || data?.partial_success) {
+        const message = data.success ? "✅ Teste enviado com sucesso via Edge Function" : "⚠️ Teste parcialmente enviado";
+        addDebugLog(message);
+        
+        if (data.stats) {
+          addDebugLog(`📊 Estatísticas: ${data.stats.sent}/${data.stats.total} enviados`);
+        }
+        
         toast({
-          title: "Teste enviado!",
-          description: "Teste enviado com sucesso. Verifique seu scenario no Make.com para confirmar o recebimento.",
+          title: data.success ? "Teste enviado!" : "Teste parcialmente enviado",
+          description: data.message || "Verifique seu scenario no Make.com para confirmar o recebimento.",
         });
       } else {
         throw new Error(data?.error || 'Erro desconhecido na Edge Function');
@@ -278,8 +284,8 @@ export const BulkSendView = () => {
         addDebugLog(`Payload completo: ${JSON.stringify(makeArray, null, 2)}`);
       }
 
-      // Enviar via Edge Function (resolve CORS automaticamente)
-      addDebugLog("Enviando via Supabase Edge Function...");
+      // Enviar via Edge Function com fan-out
+      addDebugLog("Enviando via Supabase Edge Function (fan-out)...");
       
       const startTime = Date.now();
       
@@ -300,14 +306,47 @@ export const BulkSendView = () => {
 
       addDebugLog(`Resposta da Edge Function: ${JSON.stringify(data)}`);
       
+      // Lidar com diferentes tipos de resposta
       if (data?.success) {
         addDebugLog("=== ENVIO FINALIZADO COM SUCESSO ===");
+        if (data.stats) {
+          addDebugLog(`📊 Estatísticas: ${data.stats.sent}/${data.stats.total} enviados (${data.stats.success_rate}% sucesso)`);
+        }
+        
         toast({
-          title: "Enviado com sucesso!",
-          description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado para Make.com. ${data.message || 'Verifique seu scenario para confirmar o recebimento.'}`,
+          title: "Envio Concluído!",
+          description: data.message,
+        });
+      } else if (data?.partial_success) {
+        addDebugLog("=== ENVIO PARCIALMENTE CONCLUÍDO ===");
+        if (data.stats) {
+          addDebugLog(`📊 Estatísticas: ${data.stats.sent}/${data.stats.total} enviados (${data.stats.success_rate}% sucesso)`);
+        }
+        if (data.errors && data.errors.length > 0) {
+          addDebugLog("❌ Primeiros erros:");
+          data.errors.forEach((error: string) => addDebugLog(`   ${error}`));
+        }
+        
+        toast({
+          title: "Envio Parcialmente Concluído",
+          description: data.message,
+          variant: "default"
         });
       } else {
-        throw new Error(data?.error || 'Erro desconhecido na Edge Function');
+        addDebugLog("=== ENVIO FALHOU ===");
+        if (data?.stats) {
+          addDebugLog(`📊 Estatísticas: ${data.stats.failed}/${data.stats.total} falharam`);
+        }
+        if (data?.errors && data.errors.length > 0) {
+          addDebugLog("❌ Primeiros erros:");
+          data.errors.forEach((error: string) => addDebugLog(`   ${error}`));
+        }
+        
+        toast({
+          title: "Falha no Envio",
+          description: data?.message || data?.error || 'Erro desconhecido na Edge Function',
+          variant: "destructive",
+        });
       }
 
     } catch (error) {
@@ -450,7 +489,7 @@ export const BulkSendView = () => {
                     className="w-full"
                     size="lg"
                   >
-                    {isSending ? 'Enviando...' : `Enviar Grupo Completo`}
+                    {isSending ? 'Enviando...' : `Enviar ${contacts.length} Contatos (Fan-out)`}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -460,9 +499,9 @@ export const BulkSendView = () => {
                       Você está prestes a enviar o grupo <strong>"{selectedGroup?.name}"</strong> com{' '}
                       <strong>{contacts.length} contatos</strong> para Make.com.
                       <br /><br />
-                      Os contatos serão enviados como um <strong>array top-level</strong>, onde cada contato (com dados do grupo) será automaticamente um bundle separado no Make.com.
+                      <strong>Fan-out ativo:</strong> Cada contato será enviado individualmente, criando {contacts.length} bundles separados no Make.com. Isso garante que cada contato seja processado independentemente no seu workflow.
                       <br /><br />
-                      Esta ação irá disparar seu workflow no Make.com 1 vez com {contacts.length} bundles individuais contendo dados completos (contato + grupo). Tem certeza?
+                      Esta ação irá fazer <strong>{contacts.length} requisições sequenciais</strong> para o webhook do Make.com, com rate limiting para evitar sobrecarga. Tem certeza?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
