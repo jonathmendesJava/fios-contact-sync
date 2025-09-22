@@ -196,7 +196,6 @@ export const BulkSendView = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        mode: 'no-cors',
         body: JSON.stringify(makeArray),
       });
 
