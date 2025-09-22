@@ -5,7 +5,8 @@ import {
   Upload, 
   LogOut, 
   BarChart3,
-  Menu
+  Menu,
+  Send
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ import { ContactsView } from '@/components/views/ContactsView';
 import { GroupsView } from '@/components/views/GroupsView';
 import { ImportView } from '@/components/views/ImportView';
 import { AnalyticsView } from '@/components/views/AnalyticsView';
+import { BulkSendView } from '@/components/views/BulkSendView';
 
 // Navigation items configuration
 const navigationItems = [
@@ -53,6 +55,12 @@ const navigationItems = [
     label: 'Relatórios',
     icon: BarChart3,
     description: 'Visualizar estatísticas'
+  },
+  {
+    id: 'bulk-send',
+    label: 'Envio em Massa',
+    icon: Send,
+    description: 'Enviar contatos para Make.com'
   }
 ];
 
@@ -145,6 +153,8 @@ const DashboardLayout = () => {
         return <ImportView />;
       case 'analytics':
         return <AnalyticsView />;
+      case 'bulk-send':
+        return <BulkSendView />;
       default:
         return <ContactsView />;
     }
