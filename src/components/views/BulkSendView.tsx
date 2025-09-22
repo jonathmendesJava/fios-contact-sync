@@ -190,19 +190,50 @@ export const BulkSendView = () => {
 
     try {
       const makeArray = getMakeBundles(selectedGroup, contacts);
+      let success = false;
 
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(makeArray),
-      });
+      // Abordagem híbrida: primeiro tenta sem no-cors (para JSON nativo)
+      try {
+        console.log('Tentativa 1: Enviando sem no-cors (JSON nativo)');
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(makeArray),
+        });
+        
+        if (response.ok || response.type === 'opaque') {
+          success = true;
+          console.log('Sucesso: Requisição enviada sem no-cors');
+        }
+      } catch (corsError) {
+        console.log('CORS bloqueou, tentando com no-cors...', corsError);
+        
+        // Fallback: usa no-cors (garante que chega ao Make.com)
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            mode: 'no-cors',
+            body: JSON.stringify(makeArray),
+          });
+          success = true;
+          console.log('Sucesso: Requisição enviada com no-cors (modo compatibilidade)');
+        } catch (finalError) {
+          console.error('Erro final no envio:', finalError);
+          throw finalError;
+        }
+      }
 
-      toast({
-        title: "Enviado com sucesso!",
-        description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado (top-level array).`,
-      });
+      if (success) {
+        toast({
+          title: "Enviado com sucesso!",
+          description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado para Make.com.`,
+        });
+      }
 
     } catch (error) {
       console.error('Erro no envio:', error);
