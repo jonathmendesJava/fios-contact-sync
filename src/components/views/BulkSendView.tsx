@@ -199,20 +199,29 @@ export const BulkSendView = () => {
 
       addDebugLog(`Enviando payload de teste: ${JSON.stringify(testPayload)}`);
       
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        mode: 'no-cors',
-        body: JSON.stringify(testPayload),
+      const { data, error } = await supabase.functions.invoke('send-to-make', {
+        body: {
+          webhookUrl,
+          contacts: testPayload
+        }
       });
 
-      addDebugLog("Teste enviado com sucesso (modo no-cors)");
-      toast({
-        title: "Teste enviado!",
-        description: "Verifique seu scenario no Make.com para confirmar o recebimento.",
-      });
+      if (error) {
+        addDebugLog(`Erro na Edge Function: ${error.message}`);
+        throw new Error(error.message);
+      }
+
+      addDebugLog(`Resposta da Edge Function: ${JSON.stringify(data)}`);
+      
+      if (data?.success) {
+        addDebugLog("✅ Teste enviado com sucesso via Edge Function");
+        toast({
+          title: "Teste enviado!",
+          description: "Teste enviado com sucesso. Verifique seu scenario no Make.com para confirmar o recebimento.",
+        });
+      } else {
+        throw new Error(data?.error || 'Erro desconhecido na Edge Function');
+      }
       
     } catch (error) {
       addDebugLog(`Erro no teste: ${error}`);
@@ -269,28 +278,37 @@ export const BulkSendView = () => {
         addDebugLog(`Payload completo: ${JSON.stringify(makeArray, null, 2)}`);
       }
 
-      // Usar no-cors como método principal (sabemos que funciona)
-      addDebugLog("Enviando com mode: 'no-cors'...");
+      // Enviar via Edge Function (resolve CORS automaticamente)
+      addDebugLog("Enviando via Supabase Edge Function...");
       
       const startTime = Date.now();
       
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        mode: 'no-cors',
-        body: JSON.stringify(makeArray),
+      const { data, error } = await supabase.functions.invoke('send-to-make', {
+        body: {
+          webhookUrl,
+          contacts: makeArray
+        }
       });
 
       const endTime = Date.now();
       addDebugLog(`Requisição completada em ${endTime - startTime}ms`);
-      addDebugLog("=== ENVIO FINALIZADO COM SUCESSO ===");
+      
+      if (error) {
+        addDebugLog(`Erro na Edge Function: ${error.message}`);
+        throw new Error(error.message);
+      }
 
-      toast({
-        title: "Enviado com sucesso!",
-        description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado para Make.com. Verifique seu scenario para confirmar o recebimento.`,
-      });
+      addDebugLog(`Resposta da Edge Function: ${JSON.stringify(data)}`);
+      
+      if (data?.success) {
+        addDebugLog("=== ENVIO FINALIZADO COM SUCESSO ===");
+        toast({
+          title: "Enviado com sucesso!",
+          description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado para Make.com. ${data.message || 'Verifique seu scenario para confirmar o recebimento.'}`,
+        });
+      } else {
+        throw new Error(data?.error || 'Erro desconhecido na Edge Function');
+      }
 
     } catch (error) {
       addDebugLog(`ERRO: ${error}`);
