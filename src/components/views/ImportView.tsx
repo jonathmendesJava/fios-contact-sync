@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { normalizePhoneNumber, isValidBrazilianPhone, getPhoneValidationError } from '@/lib/phone-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
@@ -46,6 +47,7 @@ interface ImportResult {
   total: number;
   inserted: number;
   duplicates: number;
+  invalidPhones: number;
   errors: string[];
 }
 
@@ -161,6 +163,7 @@ export const ImportView: React.FC = () => {
       total: csvData.length,
       inserted: 0,
       duplicates: 0,
+      invalidPhones: 0,
       errors: []
     };
 
@@ -169,16 +172,38 @@ export const ImportView: React.FC = () => {
         const contact = csvData[i];
         
         try {
-          // Check for duplicates
-          const { data: existing, error: checkError } = await supabase
+          // Validate phone number format first
+          if (!isValidBrazilianPhone(contact.phone)) {
+            importResult.invalidPhones++;
+            const error = getPhoneValidationError(contact.phone);
+            importResult.errors.push(`Linha ${i + 2}: ${error || 'Formato de telefone inválido'}`);
+            setProgress(Math.round(((i + 1) / csvData.length) * 100));
+            continue;
+          }
+
+          // Normalize phone for duplicate checking
+          const normalizedPhone = normalizePhoneNumber(contact.phone);
+          if (!normalizedPhone) {
+            importResult.invalidPhones++;
+            importResult.errors.push(`Linha ${i + 2}: Não foi possível normalizar o telefone`);
+            setProgress(Math.round(((i + 1) / csvData.length) * 100));
+            continue;
+          }
+
+          // Check for duplicates using normalized phone
+          const { data: allContacts, error: fetchError } = await supabase
             .from('contacts')
-            .select('id')
-            .eq('phone', contact.phone)
-            .maybeSingle();
+            .select('phone');
 
-          if (checkError) throw checkError;
+          if (fetchError) throw fetchError;
 
-          if (existing) {
+          // Check if any existing contact has the same normalized phone
+          const isDuplicate = allContacts?.some(existingContact => {
+            const existingNormalized = normalizePhoneNumber(existingContact.phone);
+            return existingNormalized === normalizedPhone;
+          });
+
+          if (isDuplicate) {
             importResult.duplicates++;
           } else {
             // Insert new contact
@@ -338,9 +363,9 @@ export const ImportView: React.FC = () => {
               <div className="flex items-start space-x-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
                 <div className="text-sm">
-                  <p className="font-medium text-yellow-800">Detecção de Duplicados</p>
+                  <p className="font-medium text-yellow-800">Validação de Telefones</p>
                   <p className="text-yellow-700">
-                    Contatos com mesmo telefone serão detectados como duplicados e não importados.
+                    Apenas telefones com 10 dígitos (DDD + 8) ou 11 dígitos (DDD + 9 + 8) serão aceitos. Números duplicados (mesmo número com 10 e 11 dígitos) serão detectados.
                   </p>
                 </div>
               </div>
@@ -501,7 +526,7 @@ export const ImportView: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-4 gap-4 mb-6">
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <div className="text-3xl font-bold text-blue-600">{result.total}</div>
                     <div className="text-sm text-blue-800 font-medium">Total Processados</div>
@@ -513,6 +538,10 @@ export const ImportView: React.FC = () => {
                   <div className="text-center p-4 bg-yellow-50 rounded-lg">
                     <div className="text-3xl font-bold text-yellow-600">{result.duplicates}</div>
                     <div className="text-sm text-yellow-800 font-medium">Duplicados</div>
+                  </div>
+                  <div className="text-center p-4 bg-red-50 rounded-lg">
+                    <div className="text-3xl font-bold text-red-600">{result.invalidPhones}</div>
+                    <div className="text-sm text-red-800 font-medium">Telefones Inválidos</div>
                   </div>
                 </div>
 

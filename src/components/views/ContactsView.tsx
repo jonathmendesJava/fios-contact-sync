@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { normalizePhoneNumber, isValidBrazilianPhone, getPhoneValidationError } from '@/lib/phone-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -140,12 +141,14 @@ export const ContactsView: React.FC = () => {
     const phoneMap = new Map<string, Contact[]>();
     const emailMap = new Map<string, Contact[]>();
 
-    // Group by phone and email
+    // Group by phone and email using normalization
     contacts.forEach(contact => {
       if (contact.phone) {
-        const phone = contact.phone.replace(/\D/g, ''); // Remove non-digits
-        if (!phoneMap.has(phone)) phoneMap.set(phone, []);
-        phoneMap.get(phone)!.push(contact);
+        const normalizedPhone = normalizePhoneNumber(contact.phone);
+        if (normalizedPhone) {
+          if (!phoneMap.has(normalizedPhone)) phoneMap.set(normalizedPhone, []);
+          phoneMap.get(normalizedPhone)!.push(contact);
+        }
       }
       
       if (contact.email) {
@@ -157,10 +160,10 @@ export const ContactsView: React.FC = () => {
 
     // Mark duplicates
     return contacts.map(contact => {
-      const phone = contact.phone?.replace(/\D/g, '');
+      const normalizedPhone = contact.phone ? normalizePhoneNumber(contact.phone) : null;
       const email = contact.email?.toLowerCase();
       
-      const phoneGroup = phone ? phoneMap.get(phone) : [];
+      const phoneGroup = normalizedPhone ? phoneMap.get(normalizedPhone) : [];
       const emailGroup = email ? emailMap.get(email) : [];
       
       const isPhoneDuplicate = phoneGroup && phoneGroup.length > 1;
@@ -215,6 +218,17 @@ export const ContactsView: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.phone.trim() || !formData.group_id || !editingContact) return;
+
+    // Validate phone number
+    const phoneError = getPhoneValidationError(formData.phone.trim());
+    if (phoneError) {
+      toast({
+        title: 'Erro de Validação',
+        description: phoneError,
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
       const contactData = {

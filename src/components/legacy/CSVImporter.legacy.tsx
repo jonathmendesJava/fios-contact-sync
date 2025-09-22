@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizePhoneNumber, isValidBrazilianPhone, getPhoneValidationError } from '@/lib/phone-utils';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
@@ -31,6 +32,7 @@ interface ImportResult {
   total: number;
   inserted: number;
   duplicates: number;
+  invalidPhones: number;
   errors: string[];
 }
 
@@ -145,6 +147,7 @@ export const CSVImporter = () => {
       total: csvData.length,
       inserted: 0,
       duplicates: 0,
+      invalidPhones: 0,
       errors: []
     };
 
@@ -153,16 +156,38 @@ export const CSVImporter = () => {
         const contact = csvData[i];
         
         try {
-          // Check for duplicates
-          const { data: existing, error: checkError } = await supabase
+          // Validate phone number format first
+          if (!isValidBrazilianPhone(contact.phone)) {
+            importResult.invalidPhones++;
+            const error = getPhoneValidationError(contact.phone);
+            importResult.errors.push(`Linha ${i + 2}: ${error || 'Formato de telefone inválido'}`);
+            setProgress(Math.round(((i + 1) / csvData.length) * 100));
+            continue;
+          }
+
+          // Normalize phone for duplicate checking
+          const normalizedPhone = normalizePhoneNumber(contact.phone);
+          if (!normalizedPhone) {
+            importResult.invalidPhones++;
+            importResult.errors.push(`Linha ${i + 2}: Não foi possível normalizar o telefone`);
+            setProgress(Math.round(((i + 1) / csvData.length) * 100));
+            continue;
+          }
+
+          // Check for duplicates using normalized phone
+          const { data: allContacts, error: fetchError } = await supabase
             .from("contacts")
-            .select("id")
-            .eq("phone", contact.phone)
-            .maybeSingle();
+            .select("phone");
 
-          if (checkError) throw checkError;
+          if (fetchError) throw fetchError;
 
-          if (existing) {
+          // Check if any existing contact has the same normalized phone
+          const isDuplicate = allContacts?.some(existingContact => {
+            const existingNormalized = normalizePhoneNumber(existingContact.phone);
+            return existingNormalized === normalizedPhone;
+          });
+
+          if (isDuplicate) {
             importResult.duplicates++;
           } else {
             // Insert new contact
@@ -369,7 +394,7 @@ export const CSVImporter = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-4 gap-4 mb-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-blue-600">{result.total}</div>
                     <div className="text-sm text-muted-foreground">Total</div>
@@ -381,6 +406,10 @@ export const CSVImporter = () => {
                   <div className="text-center">
                     <div className="text-2xl font-bold text-yellow-600">{result.duplicates}</div>
                     <div className="text-sm text-muted-foreground">Duplicados</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">{result.invalidPhones}</div>
+                    <div className="text-sm text-muted-foreground">Inválidos</div>
                   </div>
                 </div>
 
