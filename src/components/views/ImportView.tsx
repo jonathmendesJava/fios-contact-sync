@@ -49,6 +49,7 @@ interface ImportResult {
   duplicates: number;
   invalidPhones: number;
   errors: string[];
+  duplicateContacts: CSVData[];
 }
 
 export const ImportView: React.FC = () => {
@@ -59,6 +60,9 @@ export const ImportView: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateContacts, setDuplicateContacts] = useState<CSVData[]>([]);
+  const [validContacts, setValidContacts] = useState<CSVData[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -153,79 +157,112 @@ export const ImportView: React.FC = () => {
     }
   };
 
-  const importContacts = async () => {
+  const checkForDuplicates = async (contacts: CSVData[]) => {
+    if (!contacts.length) return { valid: [], duplicates: [], invalid: [] };
+
+    // Get all existing contacts
+    const { data: existingContacts, error } = await supabase
+      .from('contacts')
+      .select('phone');
+
+    if (error) throw error;
+
+    const valid: CSVData[] = [];
+    const duplicates: CSVData[] = [];
+    const invalid: CSVData[] = [];
+
+    contacts.forEach((contact, index) => {
+      // Check if phone is valid
+      if (!isValidBrazilianPhone(contact.phone)) {
+        invalid.push(contact);
+        return;
+      }
+
+      // Check for duplicates
+      const normalizedPhone = normalizePhoneNumber(contact.phone);
+      const isDuplicate = existingContacts?.some(existing => {
+        const existingNormalized = normalizePhoneNumber(existing.phone);
+        return existingNormalized === normalizedPhone;
+      });
+
+      // Also check for duplicates within the CSV itself
+      const csvDuplicate = contacts.some((other, otherIndex) => {
+        if (otherIndex >= index) return false; // Only check previous contacts
+        const otherNormalized = normalizePhoneNumber(other.phone);
+        return otherNormalized === normalizedPhone;
+      });
+
+      if (isDuplicate || csvDuplicate) {
+        duplicates.push(contact);
+      } else {
+        valid.push(contact);
+      }
+    });
+
+    return { valid, duplicates, invalid };
+  };
+
+  const preCheckContacts = async () => {
     if (!selectedGroup || csvData.length === 0) return;
 
+    try {
+      const { valid, duplicates, invalid } = await checkForDuplicates(csvData);
+      
+      setValidContacts(valid);
+      setDuplicateContacts([...duplicates, ...invalid]);
+
+      if (duplicates.length > 0 || invalid.length > 0) {
+        setShowDuplicateDialog(true);
+      } else {
+        // No issues, proceed directly
+        await importValidContacts(valid);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro na Verificação',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const importValidContacts = async (contactsToImport: CSVData[]) => {
     setImporting(true);
     setProgress(0);
+    setShowDuplicateDialog(false);
     
     const importResult: ImportResult = {
       total: csvData.length,
       inserted: 0,
-      duplicates: 0,
-      invalidPhones: 0,
-      errors: []
+      duplicates: duplicateContacts.length,
+      invalidPhones: duplicateContacts.filter(c => !isValidBrazilianPhone(c.phone)).length,
+      errors: [],
+      duplicateContacts: duplicateContacts
     };
 
     try {
-      for (let i = 0; i < csvData.length; i++) {
-        const contact = csvData[i];
+      for (let i = 0; i < contactsToImport.length; i++) {
+        const contact = contactsToImport[i];
         
         try {
-          // Validate phone number format first
-          if (!isValidBrazilianPhone(contact.phone)) {
-            importResult.invalidPhones++;
-            const error = getPhoneValidationError(contact.phone);
-            importResult.errors.push(`Linha ${i + 2}: ${error || 'Formato de telefone inválido'}`);
-            setProgress(Math.round(((i + 1) / csvData.length) * 100));
-            continue;
-          }
-
-          // Normalize phone for duplicate checking
-          const normalizedPhone = normalizePhoneNumber(contact.phone);
-          if (!normalizedPhone) {
-            importResult.invalidPhones++;
-            importResult.errors.push(`Linha ${i + 2}: Não foi possível normalizar o telefone`);
-            setProgress(Math.round(((i + 1) / csvData.length) * 100));
-            continue;
-          }
-
-          // Check for duplicates using normalized phone
-          const { data: allContacts, error: fetchError } = await supabase
+          const { error: insertError } = await supabase
             .from('contacts')
-            .select('phone');
+            .insert([{
+              name: contact.name,
+              phone: contact.phone,
+              email: contact.email || null,
+              signature: contact.signature || null,
+              group_id: selectedGroup,
+              user_id: (await supabase.auth.getUser()).data.user!.id,
+            }]);
 
-          if (fetchError) throw fetchError;
-
-          // Check if any existing contact has the same normalized phone
-          const isDuplicate = allContacts?.some(existingContact => {
-            const existingNormalized = normalizePhoneNumber(existingContact.phone);
-            return existingNormalized === normalizedPhone;
-          });
-
-          if (isDuplicate) {
-            importResult.duplicates++;
-          } else {
-            // Insert new contact
-            const { error: insertError } = await supabase
-              .from('contacts')
-              .insert([{
-                name: contact.name,
-                phone: contact.phone,
-                email: contact.email || null,
-                signature: contact.signature || null,
-                group_id: selectedGroup,
-                user_id: (await supabase.auth.getUser()).data.user!.id,
-              }]);
-
-            if (insertError) throw insertError;
-            importResult.inserted++;
-          }
+          if (insertError) throw insertError;
+          importResult.inserted++;
         } catch (error: any) {
-          importResult.errors.push(`Linha ${i + 2}: ${error.message}`);
+          importResult.errors.push(`${contact.name}: ${error.message}`);
         }
 
-        setProgress(Math.round(((i + 1) / csvData.length) * 100));
+        setProgress(Math.round(((i + 1) / contactsToImport.length) * 100));
       }
 
       setResult(importResult);
@@ -247,6 +284,10 @@ export const ImportView: React.FC = () => {
       setImporting(false);
       setCsvData([]);
     }
+  };
+
+  const importContacts = async () => {
+    await preCheckContacts();
   };
 
   const downloadTemplate = () => {
@@ -501,7 +542,7 @@ export const ImportView: React.FC = () => {
                     className="w-full h-12"
                     size="lg"
                   >
-                    {importing ? 'Importando contatos...' : `Importar ${csvData.length} Contatos`}
+                    {importing ? 'Verificando contatos...' : `Verificar e Importar ${csvData.length} Contatos`}
                   </Button>
                 )}
               </div>
@@ -514,12 +555,12 @@ export const ImportView: React.FC = () => {
               <CardContent className="py-6">
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span>Importando contatos...</span>
+                    <span>Importando contatos válidos...</span>
                     <span>{progress}%</span>
                   </div>
                   <Progress value={progress} className="w-full h-2" />
                   <p className="text-xs text-muted-foreground text-center">
-                    Verificando duplicados e inserindo contatos...
+                    Inserindo contatos na base de dados...
                   </p>
                 </div>
               </CardContent>
@@ -555,9 +596,30 @@ export const ImportView: React.FC = () => {
                   </div>
                 </div>
 
+                {result.duplicateContacts && result.duplicateContacts.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium text-yellow-600 mb-2">Contatos duplicados/inválidos (não importados):</h4>
+                    <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg max-h-40 overflow-y-auto">
+                      {result.duplicateContacts.slice(0, 10).map((contact, index) => (
+                        <div key={index} className="text-sm text-yellow-800 mb-1 p-2 bg-white rounded border">
+                          <div className="font-medium">{contact.name} - {contact.phone}</div>
+                          <div className="text-xs text-yellow-600">
+                            {!isValidBrazilianPhone(contact.phone) ? 'Telefone inválido' : 'Número duplicado'}
+                          </div>
+                        </div>
+                      ))}
+                      {result.duplicateContacts.length > 10 && (
+                        <p className="text-sm text-muted-foreground">
+                          ... e mais {result.duplicateContacts.length - 10} contatos
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {result.errors.length > 0 && (
                   <div className="mt-4">
-                    <h4 className="font-medium text-destructive mb-2">Erros encontrados:</h4>
+                    <h4 className="font-medium text-destructive mb-2">Outros erros:</h4>
                     <div className="bg-destructive/10 p-3 rounded-lg max-h-40 overflow-y-auto">
                       {result.errors.slice(0, 10).map((error, index) => (
                         <p key={index} className="text-sm text-destructive mb-1">{error}</p>
@@ -575,6 +637,92 @@ export const ImportView: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Duplicate Confirmation Dialog */}
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2 text-yellow-600" />
+              Contatos Duplicados/Inválidos Encontrados
+            </DialogTitle>
+            <DialogDescription>
+              Encontramos {duplicateContacts.length} contatos que não podem ser importados. 
+              Você pode continuar importando apenas os contatos válidos ou cancelar a operação.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-auto space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="bg-green-50 border-green-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-green-800">Contatos Válidos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{validContacts.length}</div>
+                  <div className="text-sm text-green-700">Serão importados</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-yellow-50 border-yellow-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-yellow-800">Problemas Encontrados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-600">{duplicateContacts.length}</div>
+                  <div className="text-sm text-yellow-700">Não serão importados</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-destructive mb-3">Contatos com problemas:</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {duplicateContacts.map((contact, index) => (
+                  <div key={index} className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium text-yellow-900">{contact.name}</div>
+                        <div className="text-sm text-yellow-800">{contact.phone}</div>
+                        {contact.email && (
+                          <div className="text-xs text-yellow-700">{contact.email}</div>
+                        )}
+                      </div>
+                      <Badge variant="destructive" className="text-xs">
+                        {!isValidBrazilianPhone(contact.phone) ? 'Telefone Inválido' : 'Duplicado'}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 text-xs text-yellow-600">
+                      {!isValidBrazilianPhone(contact.phone) 
+                        ? getPhoneValidationError(contact.phone)
+                        : 'Este número já existe no sistema ou está duplicado no arquivo'
+                      }
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDuplicateDialog(false)}
+            >
+              Cancelar Importação
+            </Button>
+            <Button 
+              onClick={() => importValidContacts(validContacts)}
+              disabled={validContacts.length === 0}
+            >
+              {validContacts.length > 0 
+                ? `Importar ${validContacts.length} Contatos Válidos`
+                : 'Nenhum Contato Válido'
+              }
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Preview Dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
@@ -600,17 +748,15 @@ export const ImportView: React.FC = () => {
                       <span className="font-medium">Email:</span> {contact.email || 'N/A'}
                     </div>
                     <div>
-                      <span className="font-medium">Assinatura:</span> {
-                        contact.signature ? (contact.signature.length > 20 ? contact.signature.substring(0, 20) + '...' : contact.signature) : 'N/A'
-                      }
+                      <span className="font-medium">Assinatura:</span> {contact.signature || 'N/A'}
                     </div>
                   </div>
                 </div>
               ))}
               {csvData.length > 50 && (
-                <p className="text-center text-muted-foreground py-4">
+                <div className="text-center text-muted-foreground py-4">
                   ... e mais {csvData.length - 50} contatos
-                </p>
+                </div>
               )}
             </div>
           </div>

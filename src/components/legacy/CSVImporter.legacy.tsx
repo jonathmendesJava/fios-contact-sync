@@ -34,6 +34,7 @@ interface ImportResult {
   duplicates: number;
   invalidPhones: number;
   errors: string[];
+  duplicateContacts?: CSVData[];
 }
 
 export const CSVImporter = () => {
