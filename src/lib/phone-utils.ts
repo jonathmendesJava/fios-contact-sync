@@ -125,28 +125,28 @@ export const getPhoneValidationError = (phone: string): string | null => {
   const digits = phone.replace(/\D/g, '');
 
   if (digits.length < 10) {
-    return 'Telefone deve ter pelo menos 10 dígitos (DDD + número)';
+    return 'Telefone deve ter pelo menos 10 dígitos. Exemplos aceitos: 11987654321, (11) 8765-4321';
   }
 
   if (digits.length > 11) {
-    return 'Telefone deve ter no máximo 11 dígitos';
+    return 'Telefone deve ter no máximo 11 dígitos. Exemplos aceitos: 11987654321, (21) 98765-4321';
   }
 
   if (digits.length !== 10 && digits.length !== 11) {
-    return 'Telefone deve ter exatamente 10 ou 11 dígitos';
+    return 'Telefone deve ter exatamente 10 ou 11 dígitos. Exemplos: 1187654321 (10 dígitos) ou 11987654321 (11 dígitos)';
   }
 
   const ddd = digits.substring(0, 2);
   const dddNum = parseInt(ddd);
 
   if (dddNum < 11 || dddNum > 99) {
-    return 'DDD inválido (deve estar entre 11 e 99)';
+    return `DDD inválido: ${ddd}. Use DDDs válidos como 11, 21, 31, 41, 51, etc. Exemplo: 11987654321`;
   }
 
   if (digits.length === 11) {
     const numberPart = digits.substring(2);
     if (numberPart[0] !== '9') {
-      return 'Números de 11 dígitos devem começar com 9 após o DDD';
+      return `Números de 11 dígitos devem ter 9 após o DDD. Exemplo: 11987654321 (correto) vs ${digits} (incorreto)`;
     }
   }
 

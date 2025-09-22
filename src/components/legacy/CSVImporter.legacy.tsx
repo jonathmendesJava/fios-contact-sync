@@ -267,7 +267,15 @@ export const CSVImporter = () => {
             <div className="bg-muted p-3 rounded-lg mt-4">
               <p className="text-sm font-medium">Exemplo:</p>
               <code className="text-xs">nome,telefone,email,assinatura</code><br />
-              <code className="text-xs">João Silva,(11) 99999-9999,joao@email.com,Obrigado!</code>
+              <code className="text-xs">João Silva,11987654321,joao@email.com,Obrigado!</code><br />
+              <code className="text-xs">Maria Santos,(21) 98765-4321,maria@email.com,Atenciosamente</code><br />
+              <code className="text-xs">Pedro Costa,1187654321,pedro@email.com,Até mais!</code>
+              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                <p className="font-medium text-blue-800">Formatos aceitos:</p>
+                <div className="text-blue-700">
+                  11 dígitos: 11987654321 | 10 dígitos: 1187654321
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
