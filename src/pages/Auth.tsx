@@ -6,15 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Mail } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
-  const [otpToken, setOtpToken] = useState("");
-  const [step, setStep] = useState<"email" | "otp">("email");
+  const [step, setStep] = useState<"email" | "sent">("email");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { signInWithOTP, verifyOTP, user } = useAuth();
+  const { signInWithMagicLink, user } = useAuth();
   const { toast } = useToast();
 
   // Redirect if already authenticated
@@ -28,7 +27,7 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signInWithOTP(email);
+    const { error } = await signInWithMagicLink(email);
     
     if (error) {
       toast({
@@ -37,36 +36,11 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
-      setStep("otp");
+      setStep("sent");
       toast({
-        title: "Código enviado!",
-        description: "Verifique seu email e digite o código recebido.",
+        title: "Link mágico enviado!",
+        description: "Verifique seu email e clique no link para fazer login.",
       });
-    }
-    
-    setLoading(false);
-  };
-
-  const handleOTPSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otpToken.length !== 6) return;
-    
-    setLoading(true);
-
-    const { error } = await verifyOTP(email, otpToken);
-    
-    if (error) {
-      toast({
-        title: "Código inválido",
-        description: "Verifique o código e tente novamente.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Login realizado!",
-        description: "Redirecionando para o dashboard...",
-      });
-      // Navigation will happen automatically via useEffect
     }
     
     setLoading(false);
@@ -79,8 +53,8 @@ const Auth = () => {
           <CardTitle className="text-2xl text-primary">Fios Tecnologia</CardTitle>
           <CardDescription>
             {step === "email" 
-              ? "Digite seu email para receber o código de acesso"
-              : "Digite o código de 6 dígitos enviado para seu email"
+              ? "Digite seu email para receber o link de acesso"
+              : "Link enviado! Verifique seu email para fazer login"
             }
           </CardDescription>
         </CardHeader>
@@ -100,55 +74,34 @@ const Auth = () => {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Enviando..." : "Enviar Código"}
+                {loading ? "Enviando..." : "Enviar Link Mágico"}
               </Button>
             </form>
           ) : (
-            <form onSubmit={handleOTPSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="otp">Código de Verificação</Label>
-                <div className="flex justify-center">
-                  <InputOTP
-                    value={otpToken}
-                    onChange={setOtpToken}
-                    maxLength={6}
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
-                    </InputOTPGroup>
-                  </InputOTP>
+            <div className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Mail className="w-8 h-8 text-primary" />
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Código enviado para: {email}
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-medium">Verifique seu email</h3>
+                <p className="text-sm text-muted-foreground">
+                  Enviamos um link mágico para <strong>{email}</strong>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Clique no link no seu email para fazer login automaticamente.
                 </p>
               </div>
-              <div className="space-y-2">
-                <Button 
-                  type="submit" 
-                  className="w-full" 
-                  disabled={loading || otpToken.length !== 6}
-                >
-                  {loading ? "Verificando..." : "Entrar"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setStep("email");
-                    setOtpToken("");
-                  }}
-                  disabled={loading}
-                >
-                  Voltar
-                </Button>
-              </div>
-            </form>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setStep("email")}
+              >
+                Usar outro email
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

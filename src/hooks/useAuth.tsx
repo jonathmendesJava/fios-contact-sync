@@ -6,8 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signInWithOTP: (email: string) => Promise<{ error: any }>;
-  verifyOTP: (email: string, token: string) => Promise<{ error: any }>;
+  signInWithMagicLink: (email: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -38,24 +37,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithOTP = async (email: string) => {
-    const redirectUrl = `${window.location.origin}/`;
+  const signInWithMagicLink = async (email: string) => {
+    const redirectUrl = `${window.location.origin}/dashboard`;
     
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: redirectUrl
+        emailRedirectTo: redirectUrl,
+        shouldCreateUser: true
       }
-    });
-    
-    return { error };
-  };
-
-  const verifyOTP = async (email: string, token: string) => {
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'email'
     });
     
     return { error };
@@ -70,8 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user,
       session,
       loading,
-      signInWithOTP,
-      verifyOTP,
+      signInWithMagicLink,
       signOut
     }}>
       {children}
