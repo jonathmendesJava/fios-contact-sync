@@ -34,6 +34,9 @@ interface MakeBundle {
   email: string | null;
   phone: string;
   signature: string | null;
+  group_id: string;
+  group_name: string;
+  total_contacts: number;
 }
 
 export const BulkSendView = () => {
@@ -162,6 +165,9 @@ export const BulkSendView = () => {
       email: contact.email,
       phone: contact.phone,
       signature: contact.signature,
+      group_id: group.id,
+      group_name: group.name,
+      total_contacts: contactList.length,
     }));
   };
 
@@ -325,9 +331,9 @@ export const BulkSendView = () => {
                       Você está prestes a enviar o grupo <strong>"{selectedGroup?.name}"</strong> com{' '}
                       <strong>{contacts.length} contatos</strong> para Make.com.
                       <br /><br />
-                      Os contatos serão enviados como um <strong>array simples</strong>, onde cada contato automaticamente vira um bundle separado no Make.com.
+                      Os contatos serão enviados como um <strong>array top-level</strong>, onde cada contato (com dados do grupo) será automaticamente um bundle separado no Make.com.
                       <br /><br />
-                      Esta ação irá disparar seu workflow no Make.com 1 vez, gerando {contacts.length} bundles individuais. Tem certeza?
+                      Esta ação irá disparar seu workflow no Make.com 1 vez com {contacts.length} bundles individuais contendo dados completos (contato + grupo). Tem certeza?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -390,7 +396,7 @@ export const BulkSendView = () => {
               <CardContent>
                 <div className="text-sm">
                   <p className="text-muted-foreground mb-3">
-                    Array simples será enviado para Make.com (cada item = 1 bundle separado):
+                    Array JSON com dados completos (contato + grupo) será enviado para Make.com (cada item = 1 bundle):
                   </p>
                   <pre className="bg-muted p-3 rounded-md overflow-x-auto text-xs">
                     <code>{JSON.stringify(samplePayload, null, 2)}</code>
