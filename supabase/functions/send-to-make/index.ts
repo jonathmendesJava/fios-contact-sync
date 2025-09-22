@@ -6,9 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const CONCURRENCY = 5;           // Processar 5 contatos por batch
-const INTERVAL_MS = 60;          // 60ms entre envios para rate limiting
-
 interface ContactPayload {
   contact_id: string;
   name: string;
@@ -18,23 +15,6 @@ interface ContactPayload {
   group_id: string;
   group_name: string;
   total_contacts: number;
-}
-
-async function sendSingleContact(webhookUrl: string, contact: ContactPayload): Promise<void> {
-  const response = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(contact),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Make.com retornou erro ${response.status}: ${errorText}`);
-  }
-
-  console.log(`✅ Contato ${contact.name} (${contact.contact_id}) enviado com sucesso`);
 }
 
 serve(async (req) => {
@@ -81,90 +61,65 @@ serve(async (req) => {
       );
     }
 
-    console.log('=== INICIANDO FAN-OUT PARA MAKE.COM ===');
-    console.log(`📦 Total de contatos para enviar: ${contacts.length}`);
-    console.log(`⚡ Processamento em batches de ${CONCURRENCY} contatos`);
-    console.log(`⏱️ Intervalo entre envios: ${INTERVAL_MS}ms`);
+    console.log('=== ENVIANDO ARRAY COMPLETO PARA MAKE.COM ===');
+    console.log(`📦 Total de contatos no array: ${contacts.length}`);
+    console.log(`📤 Enviando array completo em 1 única requisição`);
 
-    let totalSent = 0;
-    let totalFailed = 0;
-    const errors: string[] = [];
-
-    // Processar contatos em batches com rate limiting
-    for (let i = 0; i < contacts.length; i += CONCURRENCY) {
-      const batch = contacts.slice(i, i + CONCURRENCY);
-      const batchNumber = Math.floor(i / CONCURRENCY) + 1;
-      const totalBatches = Math.ceil(contacts.length / CONCURRENCY);
-      
-      console.log(`🔄 Processando batch ${batchNumber}/${totalBatches} (${batch.length} contatos)`);
-
-      // Enviar batch com Promise.allSettled para não falhar tudo se 1 der erro
-      const results = await Promise.allSettled(
-        batch.map(async (contact, idx) => {
-          // Rate limiting: delay entre envios dentro do batch
-          if (idx > 0) {
-            await new Promise(resolve => setTimeout(resolve, idx * INTERVAL_MS));
-          }
-          
-          console.log(`📤 Enviando ${contact.name} (${totalSent + idx + 1}/${contacts.length})`);
-          await sendSingleContact(webhookUrl, contact);
-          return contact.name;
-        })
-      );
-
-      // Processar resultados do batch
-      results.forEach((result, idx) => {
-        if (result.status === 'fulfilled') {
-          totalSent++;
-          console.log(`✅ ${result.value} enviado com sucesso`);
-        } else {
-          totalFailed++;
-          const contactName = batch[idx].name;
-          const errorMsg = `❌ Erro ao enviar ${contactName}: ${result.reason.message}`;
-          console.error(errorMsg);
-          errors.push(errorMsg);
-        }
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contacts),
       });
 
-      console.log(`📊 Batch ${batchNumber} concluído. Sucessos: ${results.filter(r => r.status === 'fulfilled').length}, Falhas: ${results.filter(r => r.status === 'rejected').length}`);
-      
-      // Pequena pausa entre batches para não sobrecarregar
-      if (i + CONCURRENCY < contacts.length) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Make.com retornou erro ${response.status}: ${errorText}`);
       }
+
+      console.log('✅ Array completo enviado com sucesso para Make.com');
+      console.log('📋 Para processar cada contato individualmente, configure um Iterator no Make.com');
+      console.log('📈 Estatísticas:');
+      console.log(`   📊 Total de contatos enviados: ${contacts.length}`);
+      console.log(`   🎯 Formato: Array completo em 1 requisição`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          message: `Array com ${contacts.length} contatos enviado com sucesso`,
+          stats: {
+            total: contacts.length,
+            format: 'complete_array',
+            requests_sent: 1
+          },
+          note: 'Configure um Iterator no Make.com para processar cada contato como bundle individual'
+        }),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+
+    } catch (error) {
+      console.error('❌ Erro ao enviar array para Make.com:', error);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          message: `Erro ao enviar array: ${error.message}`,
+          stats: {
+            total: contacts.length,
+            sent: 0,
+            failed: contacts.length
+          }
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
-
-    console.log('=== FAN-OUT CONCLUÍDO ===');
-    console.log(`📈 Estatísticas finais:`);
-    console.log(`   ✅ Enviados com sucesso: ${totalSent}`);
-    console.log(`   ❌ Falhas: ${totalFailed}`);
-    console.log(`   📊 Total processado: ${totalSent + totalFailed}`);
-
-    const isPartialSuccess = totalSent > 0 && totalFailed > 0;
-    const isCompleteSuccess = totalSent === contacts.length && totalFailed === 0;
-
-    return new Response(
-      JSON.stringify({ 
-        success: isCompleteSuccess,
-        partial_success: isPartialSuccess,
-        message: isCompleteSuccess 
-          ? `Todos os ${totalSent} contatos foram enviados com sucesso` 
-          : isPartialSuccess
-          ? `${totalSent} contatos enviados, ${totalFailed} falharam`
-          : `Falha no envio. ${totalFailed} erros encontrados`,
-        stats: {
-          total: contacts.length,
-          sent: totalSent,
-          failed: totalFailed,
-          success_rate: Math.round((totalSent / contacts.length) * 100)
-        },
-        errors: totalFailed > 0 ? errors.slice(0, 5) : [] // Limitar erros no response
-      }),
-      { 
-        status: isCompleteSuccess ? 200 : (isPartialSuccess ? 207 : 500),
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
 
   } catch (error) {
     console.error('❌ Erro na Edge Function:', error);
