@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
-import { Send, Users, Globe, Copy, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Send, Users, Globe, Copy, CheckCircle, XCircle, Clock, Bug, Zap, Eye, EyeOff } from 'lucide-react';
 
 interface Group {
   id: string;
@@ -49,6 +49,9 @@ export const BulkSendView = () => {
   const [webhookUrl, setWebhookUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
+  const [debugLog, setDebugLog] = useState<string[]>([]);
 
   // Load webhook URL from localStorage
   useEffect(() => {
@@ -147,13 +150,79 @@ export const BulkSendView = () => {
     }
   }, [selectedGroupId]);
 
-  // Validate webhook URL
+  // Add debug log entry
+  const addDebugLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setDebugLog(prev => [...prev, `[${timestamp}] ${message}`]);
+    console.log(message);
+  };
+
+  // Clear debug log
+  const clearDebugLog = () => {
+    setDebugLog([]);
+  };
+
+  // Enhanced webhook URL validation
   const isValidWebhookUrl = (url: string) => {
     try {
-      new URL(url);
-      return url.includes('make.com') || url.includes('integromat.com') || url.startsWith('https://');
+      const parsed = new URL(url);
+      const isHttps = parsed.protocol === 'https:';
+      const isMakeDomain = url.includes('make.com') || url.includes('integromat.com');
+      const hasHookPath = url.includes('/hook/') || url.includes('/webhook/');
+      
+      return isHttps && (isMakeDomain || hasHookPath);
     } catch {
       return false;
+    }
+  };
+
+  // Test webhook connectivity
+  const testWebhook = async () => {
+    if (!webhookUrl || !isValidWebhookUrl(webhookUrl)) {
+      toast({
+        title: "URL inválida",
+        description: "Digite uma URL válida do Make.com antes de testar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsTesting(true);
+    addDebugLog("Iniciando teste de conectividade...");
+
+    try {
+      const testPayload = [{
+        test: true,
+        timestamp: new Date().toISOString(),
+        message: "Teste de conectividade do webhook"
+      }];
+
+      addDebugLog(`Enviando payload de teste: ${JSON.stringify(testPayload)}`);
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'no-cors',
+        body: JSON.stringify(testPayload),
+      });
+
+      addDebugLog("Teste enviado com sucesso (modo no-cors)");
+      toast({
+        title: "Teste enviado!",
+        description: "Verifique seu scenario no Make.com para confirmar o recebimento.",
+      });
+      
+    } catch (error) {
+      addDebugLog(`Erro no teste: ${error}`);
+      toast({
+        title: "Erro no teste",
+        description: "Não foi possível conectar ao webhook. Verifique a URL.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -187,59 +256,50 @@ export const BulkSendView = () => {
     if (!selectedGroup) return;
 
     setIsSending(true);
+    clearDebugLog();
+    addDebugLog("=== INICIANDO ENVIO ===");
 
     try {
       const makeArray = getMakeBundles(selectedGroup, contacts);
-      let success = false;
+      addDebugLog(`Preparado array com ${makeArray.length} contatos`);
+      addDebugLog(`URL destino: ${webhookUrl}`);
+      addDebugLog(`Tamanho do payload: ${JSON.stringify(makeArray).length} caracteres`);
 
-      // Abordagem híbrida: primeiro tenta sem no-cors (para JSON nativo)
-      try {
-        console.log('Tentativa 1: Enviando sem no-cors (JSON nativo)');
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(makeArray),
-        });
-        
-        if (response.ok || response.type === 'opaque') {
-          success = true;
-          console.log('Sucesso: Requisição enviada sem no-cors');
-        }
-      } catch (corsError) {
-        console.log('CORS bloqueou, tentando com no-cors...', corsError);
-        
-        // Fallback: usa no-cors (garante que chega ao Make.com)
-        try {
-          await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            mode: 'no-cors',
-            body: JSON.stringify(makeArray),
-          });
-          success = true;
-          console.log('Sucesso: Requisição enviada com no-cors (modo compatibilidade)');
-        } catch (finalError) {
-          console.error('Erro final no envio:', finalError);
-          throw finalError;
-        }
+      if (debugMode) {
+        addDebugLog(`Payload completo: ${JSON.stringify(makeArray, null, 2)}`);
       }
 
-      if (success) {
-        toast({
-          title: "Enviado com sucesso!",
-          description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado para Make.com.`,
-        });
-      }
+      // Usar no-cors como método principal (sabemos que funciona)
+      addDebugLog("Enviando com mode: 'no-cors'...");
+      
+      const startTime = Date.now();
+      
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'no-cors',
+        body: JSON.stringify(makeArray),
+      });
+
+      const endTime = Date.now();
+      addDebugLog(`Requisição completada em ${endTime - startTime}ms`);
+      addDebugLog("=== ENVIO FINALIZADO COM SUCESSO ===");
+
+      toast({
+        title: "Enviado com sucesso!",
+        description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado para Make.com. Verifique seu scenario para confirmar o recebimento.`,
+      });
 
     } catch (error) {
+      addDebugLog(`ERRO: ${error}`);
+      addDebugLog("=== ENVIO FALHOU ===");
+      
       console.error('Erro no envio:', error);
       toast({
         title: "Erro no envio",
-        description: "Não foi possível enviar os dados. Verifique a URL do webhook.",
+        description: `Falha na requisição: ${error instanceof Error ? error.message : 'Erro desconhecido'}. Verifique a URL e sua conexão.`,
         variant: "destructive"
       });
     } finally {
@@ -323,7 +383,7 @@ export const BulkSendView = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              <div className="space-y-3">
                 <Label>URL do Webhook</Label>
                 <Input
                   type="url"
@@ -333,9 +393,30 @@ export const BulkSendView = () => {
                 />
                 {webhookUrl && !isValidWebhookUrl(webhookUrl) && (
                   <p className="text-sm text-destructive mt-1">
-                    URL inválida. Use uma URL HTTPS válida do Make.com
+                    URL inválida. Use uma URL HTTPS do Make.com com /hook/ no caminho
                   </p>
                 )}
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={testWebhook}
+                    disabled={!isValidWebhookUrl(webhookUrl) || isTesting}
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    {isTesting ? 'Testando...' : 'Testar Webhook'}
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDebugMode(!debugMode)}
+                  >
+                    <Bug className="h-4 w-4 mr-2" />
+                    Debug {debugMode ? 'ON' : 'OFF'}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -406,6 +487,27 @@ export const BulkSendView = () => {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Debug Log */}
+          {debugLog.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Log de Debug
+                  <Button variant="outline" size="sm" onClick={clearDebugLog}>
+                    Limpar
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-60 overflow-y-auto bg-muted p-3 rounded-md">
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+                    {debugLog.join('\n')}
+                  </pre>
                 </div>
               </CardContent>
             </Card>
