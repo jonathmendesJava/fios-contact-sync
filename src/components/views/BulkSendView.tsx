@@ -28,21 +28,15 @@ interface Contact {
   signature: string | null;
 }
 
-interface ContactBundle {
+interface MakeBundle {
   contact_id: string;
   name: string;
   email: string | null;
   phone: string;
   signature: string | null;
-}
-
-interface BulkPayload {
-  group_info: {
-    group_id: string;
-    group_name: string;
-    total_contacts: number;
-  };
-  contacts: ContactBundle[];
+  group_id: string;
+  group_name: string;
+  total_contacts: number;
 }
 
 export const BulkSendView = () => {
@@ -163,30 +157,26 @@ export const BulkSendView = () => {
     }
   };
 
-  // Prepare bundle for individual contact
-  const getContactBundle = (contact: Contact): ContactBundle => {
-    return {
+  // Create bundles for Make.com (top-level array)
+  const getMakeBundles = (group: Group, contactList: Contact[]): MakeBundle[] => {
+    return contactList.map((contact) => ({
       contact_id: contact.id,
       name: contact.name,
       email: contact.email,
       phone: contact.phone,
-      signature: contact.signature
-    };
+      signature: contact.signature,
+      group_id: group.id,
+      group_name: group.name,
+      total_contacts: contactList.length,
+    }));
   };
 
-  // Get sample payload for preview
-  const getSamplePayload = (): BulkPayload | null => {
+  // Get sample payload for preview (top-level array)
+  const getSamplePayload = (): MakeBundle[] | null => {
     const selectedGroup = groups.find(g => g.id === selectedGroupId);
     if (!selectedGroup || contacts.length === 0) return null;
 
-    return {
-      group_info: {
-        group_id: selectedGroup.id,
-        group_name: selectedGroup.name,
-        total_contacts: contacts.length
-      },
-      contacts: contacts.slice(0, 2).map(getContactBundle) // Show first 2 contacts as example
-    };
+    return getMakeBundles(selectedGroup, contacts.slice(0, 2)); // Show first 2 contacts as example
   };
 
   // Send bulk payload to Make.com webhook
@@ -199,14 +189,7 @@ export const BulkSendView = () => {
     setIsSending(true);
 
     try {
-      const payload: BulkPayload = {
-        group_info: {
-          group_id: selectedGroup.id,
-          group_name: selectedGroup.name,
-          total_contacts: contacts.length
-        },
-        contacts: contacts.map(getContactBundle)
-      };
+      const makeArray = getMakeBundles(selectedGroup, contacts);
 
       await fetch(webhookUrl, {
         method: 'POST',
@@ -214,12 +197,12 @@ export const BulkSendView = () => {
           'Content-Type': 'application/json',
         },
         mode: 'no-cors',
-        body: JSON.stringify(payload),
+        body: JSON.stringify(makeArray),
       });
 
       toast({
         title: "Enviado com sucesso!",
-        description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado para Make.com.`,
+        description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado (top-level array).`,
       });
 
     } catch (error) {
@@ -348,9 +331,9 @@ export const BulkSendView = () => {
                       Você está prestes a enviar o grupo <strong>"{selectedGroup?.name}"</strong> com{' '}
                       <strong>{contacts.length} contatos</strong> para Make.com.
                       <br /><br />
-                      Todos os contatos serão enviados em uma única requisição JSON, onde cada contato será um bundle individual no array "contacts".
+                      Os contatos serão enviados como um <strong>array top-level</strong>, onde cada contato será automaticamente um bundle separado no Make.com.
                       <br /><br />
-                      Esta ação irá disparar seu workflow no Make.com 1 vez. Tem certeza?
+                      Esta ação irá disparar seu workflow no Make.com 1 vez com {contacts.length} bundles individuais. Tem certeza?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -403,7 +386,7 @@ export const BulkSendView = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  Estrutura do Payload JSON
+                  Estrutura do Array JSON (Top-Level)
                   <Button variant="outline" size="sm" onClick={copySamplePayload}>
                     <Copy className="h-4 w-4 mr-2" />
                     Copiar
@@ -413,13 +396,13 @@ export const BulkSendView = () => {
               <CardContent>
                 <div className="text-sm">
                   <p className="text-muted-foreground mb-3">
-                    Uma única requisição JSON será enviada com esta estrutura:
+                    Um array JSON será enviado diretamente para Make.com (cada item = 1 bundle):
                   </p>
                   <pre className="bg-muted p-3 rounded-md overflow-x-auto text-xs">
                     <code>{JSON.stringify(samplePayload, null, 2)}</code>
                   </pre>
                   <p className="text-muted-foreground mt-3">
-                    <strong>1 requisição</strong> contendo {contacts.length} contatos no array "contacts"
+                    <strong>1 requisição</strong> gerando <strong>{contacts.length} bundles individuais</strong> no Make.com
                   </p>
                 </div>
               </CardContent>
