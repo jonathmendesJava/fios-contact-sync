@@ -29,8 +29,6 @@ interface Contact {
 }
 
 interface ContactBundle {
-  group_id: string;
-  group_name: string;
   contact_id: string;
   name: string;
   email: string | null;
@@ -38,12 +36,13 @@ interface ContactBundle {
   signature: string | null;
 }
 
-interface SendProgress {
-  current: number;
-  total: number;
-  success: number;
-  failed: number;
-  errors: string[];
+interface BulkPayload {
+  group_info: {
+    group_id: string;
+    group_name: string;
+    total_contacts: number;
+  };
+  contacts: ContactBundle[];
 }
 
 export const BulkSendView = () => {
@@ -56,13 +55,6 @@ export const BulkSendView = () => {
   const [webhookUrl, setWebhookUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [sendProgress, setSendProgress] = useState<SendProgress>({
-    current: 0,
-    total: 0,
-    success: 0,
-    failed: 0,
-    errors: []
-  });
 
   // Load webhook URL from localStorage
   useEffect(() => {
@@ -172,13 +164,8 @@ export const BulkSendView = () => {
   };
 
   // Prepare bundle for individual contact
-  const getContactBundle = (contact: Contact): ContactBundle | null => {
-    const selectedGroup = groups.find(g => g.id === selectedGroupId);
-    if (!selectedGroup) return null;
-
+  const getContactBundle = (contact: Contact): ContactBundle => {
     return {
-      group_id: selectedGroup.id,
-      group_name: selectedGroup.name,
       contact_id: contact.id,
       name: contact.name,
       email: contact.email,
@@ -187,95 +174,59 @@ export const BulkSendView = () => {
     };
   };
 
-  // Get sample bundle for preview
-  const getSampleBundle = (): ContactBundle | null => {
-    if (contacts.length === 0) return null;
-    return getContactBundle(contacts[0]);
+  // Get sample payload for preview
+  const getSamplePayload = (): BulkPayload | null => {
+    const selectedGroup = groups.find(g => g.id === selectedGroupId);
+    if (!selectedGroup || contacts.length === 0) return null;
+
+    return {
+      group_info: {
+        group_id: selectedGroup.id,
+        group_name: selectedGroup.name,
+        total_contacts: contacts.length
+      },
+      contacts: contacts.slice(0, 2).map(getContactBundle) // Show first 2 contacts as example
+    };
   };
 
-  // Send individual bundles to Make.com webhook
+  // Send bulk payload to Make.com webhook
   const handleSend = async () => {
     if (!webhookUrl || contacts.length === 0) return;
-
-    setIsSending(true);
-    setSendProgress({
-      current: 0,
-      total: contacts.length,
-      success: 0,
-      failed: 0,
-      errors: []
-    });
 
     const selectedGroup = groups.find(g => g.id === selectedGroupId);
     if (!selectedGroup) return;
 
-    let successCount = 0;
-    let failedCount = 0;
-    const errors: string[] = [];
+    setIsSending(true);
 
     try {
-      for (let i = 0; i < contacts.length; i++) {
-        const contact = contacts[i];
-        const bundle = getContactBundle(contact);
-        
-        if (!bundle) continue;
+      const payload: BulkPayload = {
+        group_info: {
+          group_id: selectedGroup.id,
+          group_name: selectedGroup.name,
+          total_contacts: contacts.length
+        },
+        contacts: contacts.map(getContactBundle)
+      };
 
-        setSendProgress(prev => ({ ...prev, current: i + 1 }));
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'no-cors',
+        body: JSON.stringify(payload),
+      });
 
-        try {
-          await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            mode: 'no-cors',
-            body: JSON.stringify(bundle),
-          });
-
-          successCount++;
-          setSendProgress(prev => ({ ...prev, success: successCount }));
-          
-          // Small delay between requests to avoid overwhelming the webhook
-          if (i < contacts.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        } catch (error) {
-          failedCount++;
-          const errorMsg = `${contact.name}: Falha no envio`;
-          errors.push(errorMsg);
-          setSendProgress(prev => ({ 
-            ...prev, 
-            failed: failedCount,
-            errors: [...prev.errors, errorMsg]
-          }));
-        }
-      }
-
-      // Show final result
-      if (failedCount === 0) {
-        toast({
-          title: "Enviado com sucesso!",
-          description: `Todos os ${successCount} contatos do grupo "${selectedGroup.name}" foram enviados para Make.com.`,
-        });
-      } else if (successCount > 0) {
-        toast({
-          title: "Envio parcialmente concluído",
-          description: `${successCount} contatos enviados com sucesso, ${failedCount} falharam.`,
-          variant: "default"
-        });
-      } else {
-        toast({
-          title: "Falha no envio",
-          description: "Nenhum contato foi enviado com sucesso. Verifique a URL do webhook.",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Enviado com sucesso!",
+        description: `Grupo "${selectedGroup.name}" com ${contacts.length} contatos enviado para Make.com.`,
+      });
 
     } catch (error) {
-      console.error('Erro geral no envio:', error);
+      console.error('Erro no envio:', error);
       toast({
         title: "Erro no envio",
-        description: "Ocorreu um erro durante o processo de envio.",
+        description: "Não foi possível enviar os dados. Verifique a URL do webhook.",
         variant: "destructive"
       });
     } finally {
@@ -283,22 +234,21 @@ export const BulkSendView = () => {
     }
   };
 
-  // Copy sample bundle to clipboard
-  const copySampleBundle = () => {
-    const sampleBundle = getSampleBundle();
-    if (sampleBundle) {
-      navigator.clipboard.writeText(JSON.stringify(sampleBundle, null, 2));
+  // Copy sample payload to clipboard
+  const copySamplePayload = () => {
+    const samplePayload = getSamplePayload();
+    if (samplePayload) {
+      navigator.clipboard.writeText(JSON.stringify(samplePayload, null, 2));
       toast({
         title: "Copiado!",
-        description: "Estrutura de bundle copiada para a área de transferência.",
+        description: "Estrutura de payload copiada para a área de transferência.",
       });
     }
   };
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
-  const sampleBundle = getSampleBundle();
+  const samplePayload = getSamplePayload();
   const canSend = selectedGroupId && contacts.length > 0 && isValidWebhookUrl(webhookUrl);
-  const isProcessing = isSending && sendProgress.current > 0;
 
   return (
     <div className="space-y-6">
@@ -377,48 +327,6 @@ export const BulkSendView = () => {
             </CardContent>
           </Card>
 
-          {/* Progress Display */}
-          {isProcessing && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Progresso do Envio
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Enviando contatos...</span>
-                    <span>{sendProgress.current} de {sendProgress.total}</span>
-                  </div>
-                  <Progress value={(sendProgress.current / sendProgress.total) * 100} />
-                </div>
-                
-                <div className="flex justify-between text-sm">
-                  <div className="flex items-center gap-1 text-green-600">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>{sendProgress.success} enviados</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-red-600">
-                    <XCircle className="h-4 w-4" />
-                    <span>{sendProgress.failed} falharam</span>
-                  </div>
-                </div>
-
-                {sendProgress.errors.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium mb-2">Erros:</p>
-                    <div className="text-xs text-muted-foreground max-h-20 overflow-y-auto">
-                      {sendProgress.errors.map((error, index) => (
-                        <div key={index}>{error}</div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           {/* Send Button */}
           <Card>
@@ -430,19 +338,19 @@ export const BulkSendView = () => {
                     className="w-full"
                     size="lg"
                   >
-                    {isSending ? 'Enviando...' : `Enviar ${contacts.length} Bundles`}
+                    {isSending ? 'Enviando...' : `Enviar Grupo Completo`}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmar Envio Individual</AlertDialogTitle>
+                    <AlertDialogTitle>Confirmar Envio do Grupo</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Você está prestes a enviar <strong>{contacts.length} bundles individuais</strong> do grupo{' '}
-                      <strong>"{selectedGroup?.name}"</strong> para Make.com.
+                      Você está prestes a enviar o grupo <strong>"{selectedGroup?.name}"</strong> com{' '}
+                      <strong>{contacts.length} contatos</strong> para Make.com.
                       <br /><br />
-                      Cada contato será enviado como um bundle separado, gerando {contacts.length} requisições individuais.
+                      Todos os contatos serão enviados em uma única requisição JSON, onde cada contato será um bundle individual no array "contacts".
                       <br /><br />
-                      Esta ação irá disparar seu workflow no Make.com {contacts.length} vezes. Tem certeza?
+                      Esta ação irá disparar seu workflow no Make.com 1 vez. Tem certeza?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -490,29 +398,29 @@ export const BulkSendView = () => {
             </Card>
           )}
 
-          {/* Bundle Preview */}
-          {sampleBundle && (
+          {/* Payload Preview */}
+          {samplePayload && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  Estrutura do Bundle Individual
-                  <Button variant="outline" size="sm" onClick={copySampleBundle}>
+                  Estrutura do Payload JSON
+                  <Button variant="outline" size="sm" onClick={copySamplePayload}>
                     <Copy className="h-4 w-4 mr-2" />
                     Copiar
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  <p><strong>Importante:</strong> Cada contato será enviado como um bundle separado.</p>
-                  <p>Total de requisições: <strong>{contacts.length}</strong></p>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-sm font-medium mb-2">Exemplo de bundle (primeiro contato):</p>
-                  <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto">
-                    {JSON.stringify(sampleBundle, null, 2)}
+              <CardContent>
+                <div className="text-sm">
+                  <p className="text-muted-foreground mb-3">
+                    Uma única requisição JSON será enviada com esta estrutura:
+                  </p>
+                  <pre className="bg-muted p-3 rounded-md overflow-x-auto text-xs">
+                    <code>{JSON.stringify(samplePayload, null, 2)}</code>
                   </pre>
+                  <p className="text-muted-foreground mt-3">
+                    <strong>1 requisição</strong> contendo {contacts.length} contatos no array "contacts"
+                  </p>
                 </div>
               </CardContent>
             </Card>
