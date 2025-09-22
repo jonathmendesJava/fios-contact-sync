@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
+import { ContactListItem } from '@/components/ui/contact-list-item';
 import { 
   Trash2, 
   Edit2, 
@@ -409,62 +410,14 @@ export const ContactsView: React.FC = () => {
                       <p>Nenhum contato neste grupo</p>
                     </div>
                   ) : (
-                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="space-y-3">
                       {group.contacts.map((contact) => (
-                        <Card key={contact.id} className="relative">
-                          {contact.isDuplicate && (
-                            <Badge 
-                              variant="destructive" 
-                              className="absolute -top-2 -right-2 text-xs"
-                            >
-                              DUPLICADO
-                            </Badge>
-                          )}
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <h4 className="font-semibold">{contact.name}</h4>
-                              <div className="flex space-x-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEdit(contact)}
-                                >
-                                  <Edit2 className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDelete(contact.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex items-center space-x-2">
-                                <Phone className="h-3 w-3 text-muted-foreground" />
-                                <span>{contact.phone}</span>
-                                {contact.duplicateType === 'phone' && (
-                                  <AlertTriangle className="h-3 w-3 text-destructive" />
-                                )}
-                              </div>
-                              {contact.email && (
-                                <div className="flex items-center space-x-2">
-                                  <Mail className="h-3 w-3 text-muted-foreground" />
-                                  <span className="truncate">{contact.email}</span>
-                                  {contact.duplicateType === 'email' && (
-                                    <AlertTriangle className="h-3 w-3 text-destructive" />
-                                  )}
-                                </div>
-                              )}
-                              {contact.signature && (
-                                <p className="text-xs text-muted-foreground mt-2 italic">
-                                  "{contact.signature}"
-                                </p>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <ContactListItem
+                          key={contact.id}
+                          contact={contact}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                        />
                       ))}
                     </div>
                   )}

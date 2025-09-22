@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
+import { GroupCard } from '@/components/ui/group-card';
 import { 
   Plus, 
   Trash2, 
@@ -30,6 +31,8 @@ interface Group {
   name: string;
   created_at: string;
   contacts_count?: number;
+  duplicates_count?: number;
+  last_updated?: string;
 }
 
 interface ImportResult {
@@ -59,7 +62,7 @@ export const GroupsView: React.FC = () => {
 
   const fetchGroups = async () => {
     try {
-      // Fetch groups with contact count
+      // Fetch groups with contact count and duplicate information
       const { data: groupsData, error: groupsError } = await supabase
         .from('contact_groups')
         .select(`
@@ -69,12 +72,63 @@ export const GroupsView: React.FC = () => {
 
       if (groupsError) throw groupsError;
 
-      const groupsWithCount = groupsData?.map(group => ({
-        ...group,
-        contacts_count: group.contacts?.[0]?.count || 0
-      })) || [];
+      // For each group, also fetch duplicate counts
+      const groupsWithStats = await Promise.all(
+        (groupsData || []).map(async (group) => {
+          // Get duplicate contacts count for this group
+          const { data: contacts, error: contactsError } = await supabase
+            .from('contacts')
+            .select('phone, email')
+            .eq('group_id', group.id);
 
-      setGroups(groupsWithCount);
+          if (contactsError) {
+            console.error('Error fetching contacts for duplicates:', contactsError);
+            return {
+              ...group,
+              contacts_count: group.contacts?.[0]?.count || 0,
+              duplicates_count: 0
+            };
+          }
+
+          // Detect duplicates
+          const phoneMap = new Map<string, number>();
+          const emailMap = new Map<string, number>();
+          let duplicateCount = 0;
+
+          contacts?.forEach(contact => {
+            if (contact.phone) {
+              const phone = contact.phone.replace(/\D/g, '');
+              phoneMap.set(phone, (phoneMap.get(phone) || 0) + 1);
+            }
+            if (contact.email) {
+              const email = contact.email.toLowerCase();
+              emailMap.set(email, (emailMap.get(email) || 0) + 1);
+            }
+          });
+
+          // Count duplicate contacts
+          contacts?.forEach(contact => {
+            const phone = contact.phone?.replace(/\D/g, '');
+            const email = contact.email?.toLowerCase();
+            
+            const isPhoneDuplicate = phone && phoneMap.get(phone)! > 1;
+            const isEmailDuplicate = email && emailMap.get(email)! > 1;
+            
+            if (isPhoneDuplicate || isEmailDuplicate) {
+              duplicateCount++;
+            }
+          });
+
+          return {
+            ...group,
+            contacts_count: group.contacts?.[0]?.count || 0,
+            duplicates_count: duplicateCount,
+            last_updated: group.updated_at
+          };
+        })
+      );
+
+      setGroups(groupsWithStats);
     } catch (error: any) {
       toast({
         title: 'Erro',
@@ -523,38 +577,12 @@ export const GroupsView: React.FC = () => {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {groups.map((group) => (
-              <Card key={group.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{group.name}</CardTitle>
-                    <div className="flex space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(group)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(group.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-muted-foreground mb-2">
-                    <Users className="h-4 w-4 mr-1" />
-                    {group.contacts_count || 0} contatos
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Criado em {new Date(group.created_at).toLocaleDateString('pt-BR')}
-                  </p>
-                </CardContent>
-              </Card>
+              <GroupCard
+                key={group.id}
+                group={group}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}
