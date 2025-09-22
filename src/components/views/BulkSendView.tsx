@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Send, Users, Globe, Copy } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Send, Users, Globe, Copy, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface Group {
   id: string;
@@ -27,11 +28,22 @@ interface Contact {
   signature: string | null;
 }
 
-interface SendPayload {
+interface ContactBundle {
   group_id: string;
   group_name: string;
-  total_contacts: number;
-  contacts: Contact[];
+  contact_id: string;
+  name: string;
+  email: string | null;
+  phone: string;
+  signature: string | null;
+}
+
+interface SendProgress {
+  current: number;
+  total: number;
+  success: number;
+  failed: number;
+  errors: string[];
 }
 
 export const BulkSendView = () => {
@@ -44,6 +56,13 @@ export const BulkSendView = () => {
   const [webhookUrl, setWebhookUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [sendProgress, setSendProgress] = useState<SendProgress>({
+    current: 0,
+    total: 0,
+    success: 0,
+    failed: 0,
+    errors: []
+  });
 
   // Load webhook URL from localStorage
   useEffect(() => {
@@ -152,45 +171,111 @@ export const BulkSendView = () => {
     }
   };
 
-  // Prepare payload for Make.com
-  const getPayload = (): SendPayload | null => {
+  // Prepare bundle for individual contact
+  const getContactBundle = (contact: Contact): ContactBundle | null => {
     const selectedGroup = groups.find(g => g.id === selectedGroupId);
-    if (!selectedGroup || contacts.length === 0) return null;
+    if (!selectedGroup) return null;
 
     return {
       group_id: selectedGroup.id,
       group_name: selectedGroup.name,
-      total_contacts: contacts.length,
-      contacts: contacts
+      contact_id: contact.id,
+      name: contact.name,
+      email: contact.email,
+      phone: contact.phone,
+      signature: contact.signature
     };
   };
 
-  // Send to Make.com webhook
+  // Get sample bundle for preview
+  const getSampleBundle = (): ContactBundle | null => {
+    if (contacts.length === 0) return null;
+    return getContactBundle(contacts[0]);
+  };
+
+  // Send individual bundles to Make.com webhook
   const handleSend = async () => {
-    const payload = getPayload();
-    if (!payload || !webhookUrl) return;
+    if (!webhookUrl || contacts.length === 0) return;
 
     setIsSending(true);
-    try {
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        mode: 'no-cors',
-        body: JSON.stringify(payload),
-      });
+    setSendProgress({
+      current: 0,
+      total: contacts.length,
+      success: 0,
+      failed: 0,
+      errors: []
+    });
 
-      toast({
-        title: "Enviado com sucesso!",
-        description: `${payload.total_contacts} contatos do grupo "${payload.group_name}" foram enviados para Make.com.`,
-      });
+    const selectedGroup = groups.find(g => g.id === selectedGroupId);
+    if (!selectedGroup) return;
+
+    let successCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    try {
+      for (let i = 0; i < contacts.length; i++) {
+        const contact = contacts[i];
+        const bundle = getContactBundle(contact);
+        
+        if (!bundle) continue;
+
+        setSendProgress(prev => ({ ...prev, current: i + 1 }));
+
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            mode: 'no-cors',
+            body: JSON.stringify(bundle),
+          });
+
+          successCount++;
+          setSendProgress(prev => ({ ...prev, success: successCount }));
+          
+          // Small delay between requests to avoid overwhelming the webhook
+          if (i < contacts.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (error) {
+          failedCount++;
+          const errorMsg = `${contact.name}: Falha no envio`;
+          errors.push(errorMsg);
+          setSendProgress(prev => ({ 
+            ...prev, 
+            failed: failedCount,
+            errors: [...prev.errors, errorMsg]
+          }));
+        }
+      }
+
+      // Show final result
+      if (failedCount === 0) {
+        toast({
+          title: "Enviado com sucesso!",
+          description: `Todos os ${successCount} contatos do grupo "${selectedGroup.name}" foram enviados para Make.com.`,
+        });
+      } else if (successCount > 0) {
+        toast({
+          title: "Envio parcialmente concluído",
+          description: `${successCount} contatos enviados com sucesso, ${failedCount} falharam.`,
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Falha no envio",
+          description: "Nenhum contato foi enviado com sucesso. Verifique a URL do webhook.",
+          variant: "destructive"
+        });
+      }
 
     } catch (error) {
-      console.error('Erro ao enviar:', error);
+      console.error('Erro geral no envio:', error);
       toast({
         title: "Erro no envio",
-        description: "Não foi possível enviar os dados para Make.com. Verifique a URL do webhook.",
+        description: "Ocorreu um erro durante o processo de envio.",
         variant: "destructive"
       });
     } finally {
@@ -198,21 +283,22 @@ export const BulkSendView = () => {
     }
   };
 
-  // Copy payload to clipboard
-  const copyPayload = () => {
-    const payload = getPayload();
-    if (payload) {
-      navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+  // Copy sample bundle to clipboard
+  const copySampleBundle = () => {
+    const sampleBundle = getSampleBundle();
+    if (sampleBundle) {
+      navigator.clipboard.writeText(JSON.stringify(sampleBundle, null, 2));
       toast({
         title: "Copiado!",
-        description: "Estrutura de dados copiada para a área de transferência.",
+        description: "Estrutura de bundle copiada para a área de transferência.",
       });
     }
   };
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
-  const payload = getPayload();
+  const sampleBundle = getSampleBundle();
   const canSend = selectedGroupId && contacts.length > 0 && isValidWebhookUrl(webhookUrl);
+  const isProcessing = isSending && sendProgress.current > 0;
 
   return (
     <div className="space-y-6">
@@ -291,6 +377,49 @@ export const BulkSendView = () => {
             </CardContent>
           </Card>
 
+          {/* Progress Display */}
+          {isProcessing && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Progresso do Envio
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Enviando contatos...</span>
+                    <span>{sendProgress.current} de {sendProgress.total}</span>
+                  </div>
+                  <Progress value={(sendProgress.current / sendProgress.total) * 100} />
+                </div>
+                
+                <div className="flex justify-between text-sm">
+                  <div className="flex items-center gap-1 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>{sendProgress.success} enviados</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-red-600">
+                    <XCircle className="h-4 w-4" />
+                    <span>{sendProgress.failed} falharam</span>
+                  </div>
+                </div>
+
+                {sendProgress.errors.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium mb-2">Erros:</p>
+                    <div className="text-xs text-muted-foreground max-h-20 overflow-y-auto">
+                      {sendProgress.errors.map((error, index) => (
+                        <div key={index}>{error}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Send Button */}
           <Card>
             <CardContent className="pt-6">
@@ -301,17 +430,19 @@ export const BulkSendView = () => {
                     className="w-full"
                     size="lg"
                   >
-                    {isSending ? 'Enviando...' : `Enviar ${contacts.length} Contatos`}
+                    {isSending ? 'Enviando...' : `Enviar ${contacts.length} Bundles`}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmar Envio</AlertDialogTitle>
+                    <AlertDialogTitle>Confirmar Envio Individual</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Você está prestes a enviar <strong>{contacts.length} contatos</strong> do grupo{' '}
+                      Você está prestes a enviar <strong>{contacts.length} bundles individuais</strong> do grupo{' '}
                       <strong>"{selectedGroup?.name}"</strong> para Make.com.
                       <br /><br />
-                      Esta ação irá disparar seu workflow no Make.com. Tem certeza?
+                      Cada contato será enviado como um bundle separado, gerando {contacts.length} requisições individuais.
+                      <br /><br />
+                      Esta ação irá disparar seu workflow no Make.com {contacts.length} vezes. Tem certeza?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -359,22 +490,30 @@ export const BulkSendView = () => {
             </Card>
           )}
 
-          {/* JSON Preview */}
-          {payload && (
+          {/* Bundle Preview */}
+          {sampleBundle && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  Estrutura de Dados
-                  <Button variant="outline" size="sm" onClick={copyPayload}>
+                  Estrutura do Bundle Individual
+                  <Button variant="outline" size="sm" onClick={copySampleBundle}>
                     <Copy className="h-4 w-4 mr-2" />
                     Copiar
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto">
-                  {JSON.stringify(payload, null, 2)}
-                </pre>
+              <CardContent className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  <p><strong>Importante:</strong> Cada contato será enviado como um bundle separado.</p>
+                  <p>Total de requisições: <strong>{contacts.length}</strong></p>
+                </div>
+                <Separator />
+                <div>
+                  <p className="text-sm font-medium mb-2">Exemplo de bundle (primeiro contato):</p>
+                  <pre className="bg-muted p-3 rounded-lg text-xs overflow-x-auto">
+                    {JSON.stringify(sampleBundle, null, 2)}
+                  </pre>
+                </div>
               </CardContent>
             </Card>
           )}
