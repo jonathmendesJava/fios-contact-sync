@@ -10,7 +10,8 @@ import {
   AlertTriangle,
   Calendar,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Plus
 } from 'lucide-react';
 import { StatsChip } from './stats-chip';
 
@@ -28,6 +29,7 @@ interface GroupCardProps {
   onEdit: (group: Group) => void;
   onDelete: (groupId: string) => void;
   onViewContacts?: (groupId: string) => void;
+  onAddContact: (groupId: string) => void;
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -35,6 +37,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   onEdit,
   onDelete,
   onViewContacts,
+  onAddContact,
 }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -72,6 +75,15 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           </div>
           
           <div className="flex items-center space-x-1 ml-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onAddContact(group.id)}
+              className="h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary"
+              title="Adicionar contato"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
             {onViewContacts && group.contacts_count && group.contacts_count > 0 && (
               <Button
                 variant="ghost"

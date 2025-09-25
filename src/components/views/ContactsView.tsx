@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/use-toast';
-import { ContactListItem } from '@/components/ui/contact-list-item';
+import { ContactsTable } from '@/components/ui/contacts-table';
 import { 
   Trash2, 
   Edit2, 
@@ -424,16 +424,11 @@ export const ContactsView: React.FC = () => {
                       <p>Nenhum contato neste grupo</p>
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {group.contacts.map((contact) => (
-                        <ContactListItem
-                          key={contact.id}
-                          contact={contact}
-                          onEdit={handleEdit}
-                          onDelete={handleDelete}
-                        />
-                      ))}
-                    </div>
+                    <ContactsTable
+                      contacts={group.contacts}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
                   )}
                 </CardContent>
               </CollapsibleContent>

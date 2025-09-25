@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { GroupCard } from '@/components/ui/group-card';
+import { AddContactToGroupDialog } from '@/components/dialogs/AddContactToGroupDialog';
 import { 
   Plus, 
   Trash2, 
@@ -48,6 +49,10 @@ export const GroupsView: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [groupName, setGroupName] = useState('');
+  
+  // Add Contact Dialog state
+  const [isAddContactDialogOpen, setIsAddContactDialogOpen] = useState(false);
+  const [selectedGroupForContacts, setSelectedGroupForContacts] = useState<{ id: string; name: string } | null>(null);
   
   // CSV Import state
   const [csvData, setCsvData] = useState<string[]>([]);
@@ -223,6 +228,18 @@ export const GroupsView: React.FC = () => {
     setEditingGroup(null);
     setGroupName('');
     setIsDialogOpen(true);
+  };
+
+  const handleAddContact = (groupId: string) => {
+    const group = groups.find(g => g.id === groupId);
+    if (group) {
+      setSelectedGroupForContacts({ id: group.id, name: group.name });
+      setIsAddContactDialogOpen(true);
+    }
+  };
+
+  const handleContactAdded = () => {
+    fetchGroups(); // Refresh group stats
   };
 
   // CSV Import functions
@@ -582,6 +599,7 @@ export const GroupsView: React.FC = () => {
                 group={group}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onAddContact={handleAddContact}
               />
             ))}
           </div>
@@ -626,6 +644,20 @@ export const GroupsView: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Add Contact Dialog */}
+      {selectedGroupForContacts && (
+        <AddContactToGroupDialog
+          isOpen={isAddContactDialogOpen}
+          onClose={() => {
+            setIsAddContactDialogOpen(false);
+            setSelectedGroupForContacts(null);
+          }}
+          groupId={selectedGroupForContacts.id}
+          groupName={selectedGroupForContacts.name}
+          onContactAdded={handleContactAdded}
+        />
+      )}
     </div>
   );
 };
