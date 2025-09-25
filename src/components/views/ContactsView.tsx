@@ -63,6 +63,7 @@ interface Group {
 }
 
 export const ContactsView: React.FC = () => {
+  // Fixed: Replaced ContactListItem with ContactsTable for better UI
   const [groupedContacts, setGroupedContacts] = useState<Group[]>([]);
   const [allGroups, setAllGroups] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
