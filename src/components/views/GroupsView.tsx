@@ -45,7 +45,6 @@ interface ImportResult {
 }
 
 export const GroupsView: React.FC = () => {
-  const { currentTenant } = useTenant();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -353,7 +352,6 @@ export const GroupsView: React.FC = () => {
               .insert([{
                 name: groupName,
                 user_id: userId,
-                tenant_id: currentTenant?.id!,
               }]);
 
             if (insertError) throw insertError;

@@ -103,167 +103,32 @@ export type Database = {
           },
         ]
       }
-      organization_environments: {
-        Row: {
-          config: Json | null
-          created_at: string
-          environment_name: string
-          id: string
-          is_active: boolean
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          config?: Json | null
-          created_at?: string
-          environment_name: string
-          id?: string
-          is_active?: boolean
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          config?: Json | null
-          created_at?: string
-          environment_name?: string
-          id?: string
-          is_active?: boolean
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "organization_environments_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      super_admin_audit_logs: {
-        Row: {
-          action: string
-          created_at: string
-          details: Json | null
-          id: string
-          resource_id: string | null
-          resource_type: string
-          super_admin_id: string
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-          resource_id?: string | null
-          resource_type: string
-          super_admin_id: string
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-          resource_id?: string | null
-          resource_type?: string
-          super_admin_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "super_admin_audit_logs_super_admin_id_fkey"
-            columns: ["super_admin_id"]
-            isOneToOne: false
-            referencedRelation: "super_admins"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      super_admins: {
-        Row: {
-          created_at: string
-          email: string
-          full_name: string
-          id: string
-          is_active: boolean
-          last_login_at: string | null
-          password_hash: string
-          updated_at: string
-          username: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          full_name: string
-          id?: string
-          is_active?: boolean
-          last_login_at?: string | null
-          password_hash: string
-          updated_at?: string
-          username: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          full_name?: string
-          id?: string
-          is_active?: boolean
-          last_login_at?: string | null
-          password_hash?: string
-          updated_at?: string
-          username?: string
-        }
-        Relationships: []
-      }
       tenants: {
         Row: {
           created_at: string
-          custom_org_id: string | null
-          description: string | null
-          environment: string
           id: string
           is_active: boolean
-          max_users: number | null
           name: string
           slug: string
-          super_admin_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
-          custom_org_id?: string | null
-          description?: string | null
-          environment?: string
           id?: string
           is_active?: boolean
-          max_users?: number | null
           name: string
           slug: string
-          super_admin_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
-          custom_org_id?: string | null
-          description?: string | null
-          environment?: string
           id?: string
           is_active?: boolean
-          max_users?: number | null
           name?: string
           slug?: string
-          super_admin_id?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "tenants_super_admin_id_fkey"
-            columns: ["super_admin_id"]
-            isOneToOne: false
-            referencedRelation: "super_admins"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_tenants: {
         Row: {
@@ -302,47 +167,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      authenticate_super_admin: {
-        Args: { _password: string; _username: string }
-        Returns: Json
-      }
       get_user_tenant: {
         Args: { _user_id: string }
-        Returns: string
-      }
-      get_user_tenant_role: {
-        Args: { _tenant_id: string; _user_id: string }
         Returns: string
       }
       has_tenant_access: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
-      }
-      has_tenant_role: {
-        Args: { _required_role: string; _tenant_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_tenant_owner_or_admin: {
-        Args: { _tenant_id: string; _user_id: string }
-        Returns: boolean
-      }
-      log_super_admin_action: {
-        Args: {
-          _action: string
-          _admin_id: string
-          _details?: Json
-          _resource_id?: string
-          _resource_type: string
-        }
-        Returns: undefined
-      }
-      set_config: {
-        Args: {
-          is_local?: boolean
-          setting_name: string
-          setting_value: string
-        }
-        Returns: undefined
       }
     }
     Enums: {

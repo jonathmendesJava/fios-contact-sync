@@ -6,7 +6,6 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signingOut: boolean;
   signInWithPassword: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -17,7 +16,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -71,28 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
-    // Prevent multiple concurrent logout attempts
-    if (signingOut) return;
-    
-    setSigningOut(true);
-    
     try {
-      // Attempt to sign out from Supabase
       await supabase.auth.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
-      // Even if server logout fails, we should clear local state
-    } finally {
-      // Always clear local state regardless of server response
-      setSession(null);
-      setUser(null);
-      setSigningOut(false);
-      
-      // Force clear any remaining auth data from localStorage
-      localStorage.removeItem('supabase.auth.token');
-      
-      // Force redirect to home/auth page
-      window.location.href = '/';
     }
   };
 
@@ -100,7 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     loading,
-    signingOut,
     signInWithPassword,
     signOut
   };

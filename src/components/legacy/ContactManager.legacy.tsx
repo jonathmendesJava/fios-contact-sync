@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +42,6 @@ interface Group {
 }
 
 export const ContactManager = () => {
-  const { currentTenant } = useTenant();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
@@ -151,7 +149,7 @@ export const ContactManager = () => {
       } else {
         const { error } = await supabase
           .from("contacts")
-          .insert([{...contactData, tenant_id: currentTenant?.id!}]);
+          .insert([contactData]);
 
         if (error) throw error;
 
