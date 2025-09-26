@@ -200,9 +200,9 @@ const DashboardLayout = () => {
               },
               modes: {
                 grab: {
-                  distance: 100,
+                  distance: 120,
                   links: {
-                    opacity: 0.05,
+                    opacity: 0.3,
                     color: "#64ffda",
                   },
                 },
@@ -210,14 +210,14 @@ const DashboardLayout = () => {
             },
             particles: {
               color: {
-                value: ["#64ffda", "#bb86fc"],
+                value: "#64ffda",
               },
               links: {
                 color: "#64ffda",
-                distance: 120,
-                enable: false,
-                opacity: 0.02,
-                width: 0.5,
+                distance: 150,
+                enable: true,
+                opacity: 0.2,
+                width: 1,
               },
               move: {
                 direction: "none",
@@ -226,21 +226,21 @@ const DashboardLayout = () => {
                   default: "out",
                 },
                 random: true,
-                speed: 0.2,
+                speed: 0.3,
                 straight: false,
               },
               number: {
                 density: {
                   enable: true,
-                  area: 2000,
+                  area: 1500,
                 },
-                value: 15,
+                value: 28,
               },
               opacity: {
-                value: { min: 0.1, max: 0.3 },
+                value: { min: 0.2, max: 0.8 },
                 animation: {
                   enable: true,
-                  speed: 0.5,
+                  speed: 1.0,
                   sync: false,
                 },
               },
@@ -255,14 +255,6 @@ const DashboardLayout = () => {
             reduceDuplicates: true,
           }}
         />
-
-        {/* Subtle Nebula Effects */}
-        <div className="absolute top-0 right-0 w-96 h-96 opacity-5 dark:opacity-10">
-          <div className="w-full h-full rounded-full bg-gradient-radial from-purple-500/20 via-purple-600/10 to-transparent blur-3xl animate-nebula-slow"></div>
-        </div>
-        <div className="absolute bottom-0 left-0 w-80 h-80 opacity-5 dark:opacity-10">
-          <div className="w-full h-full rounded-full bg-gradient-radial from-cyan-500/20 via-blue-500/10 to-transparent blur-3xl animate-nebula"></div>
-        </div>
 
         <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         
