@@ -21,12 +21,7 @@ export function TenantSelector() {
   const { currentTenant, userTenants, switchTenant, loading } = useTenant();
 
   if (loading || !currentTenant) {
-    return (
-      <div className="flex items-center space-x-2">
-        <Building2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Carregando...</span>
-      </div>
-    );
+    return null;
   }
 
   return (
