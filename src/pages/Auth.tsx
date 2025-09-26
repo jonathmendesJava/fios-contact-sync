@@ -85,7 +85,7 @@ const Auth = () => {
               },
               onHover: {
                 enable: true,
-                mode: ["connect", "grab"],
+                mode: "grab",
               },
               resize: true,
             },
@@ -98,9 +98,9 @@ const Auth = () => {
                 radius: 60,
               },
               grab: {
-                distance: 200,
+                distance: 120,
                 links: {
-                  opacity: 0.4,
+                  opacity: 0.2,
                   color: "#64ffda",
                 },
               },
@@ -115,14 +115,10 @@ const Auth = () => {
             },
             links: {
               color: "#64ffda",
-              distance: 150,
+              distance: 90,
               enable: true,
-              opacity: 0.2,
+              opacity: 0.1,
               width: 1,
-              triangles: {
-                enable: true,
-                opacity: 0.1,
-              },
             },
             move: {
               direction: "none",
@@ -131,20 +127,20 @@ const Auth = () => {
                 default: "bounce",
               },
               random: true,
-              speed: 0.8,
+              speed: 0.4,
               straight: false,
               attract: {
                 enable: true,
-                rotateX: 600,
-                rotateY: 1200,
+                rotateX: 300,
+                rotateY: 600,
               },
             },
             number: {
               density: {
                 enable: true,
-                area: 800,
+                area: 1200,
               },
-              value: 120,
+              value: 45,
             },
             opacity: {
               value: { min: 0.3, max: 0.8 },
@@ -168,7 +164,7 @@ const Auth = () => {
             twinkle: {
               particles: {
                 enable: true,
-                frequency: 0.05,
+                frequency: 0.02,
                 opacity: 1,
               },
             },
