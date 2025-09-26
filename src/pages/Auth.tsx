@@ -107,96 +107,50 @@ const Auth = () => {
               },
               onHover: {
                 enable: true,
-                mode: ["grab", "connect", "attract"],
+                mode: "connect",
               },
               resize: true,
             },
             modes: {
-              connect: {
-                distance: 200,
-                links: {
-                  opacity: 0.8,
-                  color: "#64ffda",
-                  width: 1.5,
-                },
-                radius: 120,
-              },
-              grab: {
-                distance: 220,
-                links: {
-                  opacity: 0.7,
-                  color: "#64ffda",
-                  width: 2,
-                  triangles: {
-                    enable: true,
-                    opacity: 0.3,
-                    color: "#64ffda",
-                  },
-                },
-              },
-              attract: {
-                distance: 150,
-                duration: 0.4,
-                easing: "ease-out-quad",
-                factor: 3,
-                maxSpeed: 50,
-                speed: 1,
-              },
-              bubble: {
-                distance: 180,
-                size: 8,
-                duration: 2,
-                opacity: 0.8,
-              },
               push: {
-                quantity: 6,
+                quantity: 4,
+              },
+              connect: {
+                distance: 150,
+                links: {
+                  opacity: 0.3,
+                },
+                radius: 60,
               },
             },
           },
             particles: {
               color: {
-                value: "#64ffda",
+                value: ["#40E0D0", "#4FFFEF", "#00CED1"],
               },
               links: {
-                color: "#64ffda",
+                color: "#40E0D0",
                 distance: 150,
                 enable: false,
                 opacity: 0.2,
                 width: 1,
-                triangles: {
-                  enable: true,
-                  opacity: 0.15,
-                  color: "#64ffda",
-                },
-                warp: true,
               },
               move: {
                 direction: "none",
                 enable: true,
                 outModes: {
-                  default: "out",
+                  default: "bounce",
                 },
-                random: true,
-                speed: 0.3,
+                random: false,
+                speed: 0.5,
                 straight: false,
-                attract: {
-                  enable: true,
-                  rotateX: 200,
-                  rotateY: 400,
-                },
-                center: {
-                  x: 50,
-                  y: 50,
-                  mode: "percent",
-                  radius: 300,
-                },
               },
               number: {
                 density: {
                   enable: true,
                   area: 800,
                 },
-                value: 140,
+                value: 80,
               },
               opacity: {
                 value: { min: 0.4, max: 0.9 },
