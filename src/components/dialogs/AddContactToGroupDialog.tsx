@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -101,9 +102,12 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
         user_id: userId,
       };
 
+      const { currentTenant } = useTenant();
+      if (!currentTenant) return;
+
       const { error } = await supabase
         .from('contacts')
-        .insert([contactData]);
+        .insert([{ ...contactData, tenant_id: currentTenant.id }]);
 
       if (error) throw error;
 

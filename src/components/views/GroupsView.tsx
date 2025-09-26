@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -163,11 +164,15 @@ export const GroupsView: React.FC = () => {
           description: 'Grupo atualizado com sucesso!',
         });
       } else {
+        const { currentTenant } = useTenant();
+        if (!currentTenant) return;
+
         const { error } = await supabase
           .from('contact_groups')
           .insert([{ 
             name: groupName.trim(), 
-            user_id: (await supabase.auth.getUser()).data.user!.id 
+            user_id: (await supabase.auth.getUser()).data.user!.id,
+            tenant_id: currentTenant.id
           }]);
 
         if (error) throw error;

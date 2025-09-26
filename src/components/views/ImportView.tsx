@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useTenant } from '@/hooks/useTenant';
 import { normalizePhoneNumber, isValidBrazilianPhone, getPhoneValidationError } from '@/lib/phone-utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -245,6 +246,9 @@ export const ImportView: React.FC = () => {
         const contact = contactsToImport[i];
         
         try {
+          const { currentTenant } = useTenant();
+          if (!currentTenant) return;
+
           const { error: insertError } = await supabase
             .from('contacts')
             .insert([{
@@ -254,6 +258,7 @@ export const ImportView: React.FC = () => {
               signature: 1, // Sempre ativo por padrão
               group_id: selectedGroup,
               user_id: (await supabase.auth.getUser()).data.user!.id,
+              tenant_id: currentTenant.id,
             }]);
 
           if (insertError) throw insertError;
