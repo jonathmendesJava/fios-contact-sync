@@ -10,9 +10,6 @@ import { Mail } from "lucide-react";
 import Particles from "react-tsparticles";
 import { loadSlim } from "tsparticles-slim";
 import type { Container, Engine } from "tsparticles-engine";
-import nebulaPurple from "@/assets/nebula-purple.png";
-import nebulaCyan from "@/assets/nebula-cyan.png";
-import nebulaPink from "@/assets/nebula-pink.png";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -85,28 +82,6 @@ const Auth = () => {
         }} />
       </div>
 
-      {/* Realistic Nebulae with Images */}
-      <div className="absolute top-0 left-0 w-80 h-80 opacity-20 animate-nebula">
-        <img 
-          src={nebulaPurple} 
-          alt="" 
-          className="w-full h-full object-cover blur-sm mix-blend-screen rotate-12"
-        />
-      </div>
-      <div className="absolute bottom-0 right-0 w-96 h-64 opacity-15 animate-nebula-slow">
-        <img 
-          src={nebulaCyan} 
-          alt="" 
-          className="w-full h-full object-cover blur-md mix-blend-screen -rotate-45"
-        />
-      </div>
-      <div className="absolute top-1/2 left-0 w-64 h-96 opacity-18 animate-nebula">
-        <img 
-          src={nebulaPink} 
-          alt="" 
-          className="w-full h-full object-cover blur-lg mix-blend-screen rotate-90"
-        />
-      </div>
       
       {/* Subtle Moon */}
       <div className="absolute top-20 right-20 w-32 h-32 rounded-full bg-gradient-radial from-slate-400/20 to-transparent blur-sm"></div>
@@ -158,7 +133,7 @@ const Auth = () => {
           },
           particles: {
             color: {
-              value: ["#ffffff", "#64ffda", "#bb86fc", "#03dac6", "#cf6679"],
+              value: "#64ffda",
             },
             links: {
               color: "#64ffda",
