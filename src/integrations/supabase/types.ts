@@ -46,7 +46,7 @@ export type Database = {
           id: string
           name: string
           phone: string
-          signature: string | null
+          signature: number
           updated_at: string
           user_id: string
         }
@@ -57,7 +57,7 @@ export type Database = {
           id?: string
           name: string
           phone: string
-          signature?: string | null
+          signature?: number
           updated_at?: string
           user_id: string
         }
@@ -68,7 +68,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string
-          signature?: string | null
+          signature?: number
           updated_at?: string
           user_id?: string
         }

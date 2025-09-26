@@ -40,7 +40,7 @@ interface CSVData {
   name: string;
   phone: string;
   email?: string;
-  signature?: string;
+  signature?: number;
 }
 
 interface ImportResult {
@@ -251,7 +251,7 @@ export const ImportView: React.FC = () => {
               name: contact.name,
               phone: contact.phone,
               email: contact.email || null,
-              signature: contact.signature || null,
+              signature: 1, // Sempre ativo por padrão
               group_id: selectedGroup,
               user_id: (await supabase.auth.getUser()).data.user!.id,
             }]);

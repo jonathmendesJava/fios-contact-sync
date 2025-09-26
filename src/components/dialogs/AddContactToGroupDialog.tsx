@@ -48,7 +48,6 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
     name: '',
     phone: '',
     email: '',
-    signature: '',
   });
 
   // CSV Import state
@@ -63,7 +62,6 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
       name: '',
       phone: '',
       email: '',
-      signature: '',
     });
     setCsvData([]);
     setResult(null);
@@ -98,7 +96,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim() || null,
-        signature: formData.signature.trim() || null,
+        signature: 1, // Sempre ativo por padrão
         group_id: groupId,
         user_id: userId,
       };
@@ -145,9 +143,6 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
     const emailIndex = headers.findIndex(h => 
       h.includes('email') || h.includes('e-mail')
     );
-    const signatureIndex = headers.findIndex(h => 
-      h.includes('assinatura') || h.includes('signature') || h.includes('obs')
-    );
 
     if (nameIndex === -1) {
       throw new Error('CSV deve conter uma coluna "nome" ou "name"');
@@ -167,7 +162,6 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
           name,
           phone,
           email: emailIndex !== -1 ? values[emailIndex]?.trim() : '',
-          signature: signatureIndex !== -1 ? values[signatureIndex]?.trim() : '',
         });
       }
     }
@@ -261,7 +255,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
                 name: contact.name,
                 phone: contact.phone,
                 email: contact.email || null,
-                signature: contact.signature || null,
+                signature: 1, // Sempre ativo por padrão
                 group_id: groupId,
                 user_id: userId,
               }]);
@@ -346,16 +340,6 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="signature">Assinatura</Label>
-                <Textarea
-                  id="signature"
-                  placeholder="Assinatura personalizada (opcional)"
-                  value={formData.signature}
-                  onChange={(e) => setFormData({...formData, signature: e.target.value})}
-                  rows={3}
-                />
-              </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={handleClose}>
                   Cancelar
@@ -378,7 +362,6 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
                 <li>• <strong>nome</strong> ou <strong>name</strong> (obrigatório)</li>
                 <li>• <strong>telefone</strong>, <strong>phone</strong> ou <strong>celular</strong> (obrigatório)</li>
                 <li>• email ou e-mail (opcional)</li>
-                <li>• assinatura, signature ou obs (opcional)</li>
               </ul>
             </div>
 

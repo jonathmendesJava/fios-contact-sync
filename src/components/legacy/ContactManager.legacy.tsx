@@ -28,7 +28,7 @@ interface Contact {
   name: string;
   phone: string;
   email?: string;
-  signature?: string;
+  signature: number;
   group_id: string;
   contact_groups: {
     name: string;
@@ -130,7 +130,7 @@ export const ContactManager = () => {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim() || null,
-        signature: formData.signature.trim() || null,
+        signature: 1, // Sempre ativo por padrão
         group_id: formData.group_id,
         user_id: (await supabase.auth.getUser()).data.user!.id,
       };

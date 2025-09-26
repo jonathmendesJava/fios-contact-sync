@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { ContactsTable } from '@/components/ui/contacts-table';
 import { 
   Trash2, 
@@ -46,7 +46,7 @@ interface Contact {
   name: string;
   phone: string;
   email?: string;
-  signature?: string;
+  signature: number;
   group_id: string;
   contact_groups: {
     name: string;
@@ -74,14 +74,42 @@ export const ContactsView: React.FC = () => {
   const [showOnlyDuplicates, setShowOnlyDuplicates] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-  // Form state
+  // Form state  
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     email: '',
-    signature: '',
     group_id: '',
   });
+
+  const { toast } = useToast();
+
+  const handleToggleSignature = async (contactId: string, currentSignature: number) => {
+    try {
+      const newSignature = currentSignature === 1 ? 0 : 1;
+      
+      const { error } = await supabase
+        .from('contacts')
+        .update({ signature: newSignature })
+        .eq('id', contactId);
+
+      if (error) throw error;
+
+      await fetchData();
+      
+      toast({
+        title: "Contato atualizado",
+        description: `Contato ${newSignature === 1 ? 'ativado' : 'desativado'} com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar signature:', error);
+      toast({
+        title: "Erro ao atualizar contato",
+        description: "Não foi possível alterar o status do contato.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -210,7 +238,6 @@ export const ContactsView: React.FC = () => {
       name: contact.name,
       phone: contact.phone,
       email: contact.email || '',
-      signature: contact.signature || '',
       group_id: contact.group_id,
     });
     setIsDialogOpen(true);
@@ -236,7 +263,6 @@ export const ContactsView: React.FC = () => {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
         email: formData.email.trim() || null,
-        signature: formData.signature.trim() || null,
         group_id: formData.group_id,
       };
 
@@ -429,6 +455,7 @@ export const ContactsView: React.FC = () => {
                       contacts={group.contacts}
                       onEdit={handleEdit}
                       onDelete={handleDelete}
+                      onToggleSignature={handleToggleSignature}
                     />
                   )}
                 </CardContent>
@@ -508,16 +535,6 @@ export const ContactsView: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signature">Assinatura</Label>
-                <Textarea
-                  id="signature"
-                  placeholder="Assinatura personalizada..."
-                  value={formData.signature}
-                  onChange={(e) => setFormData({...formData, signature: e.target.value})}
-                  rows={3}
-                />
               </div>
             </div>
             <DialogFooter>

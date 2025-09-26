@@ -10,14 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Edit2, Trash2, AlertTriangle, Phone, Mail } from 'lucide-react';
+import { Edit2, Trash2, AlertTriangle, Phone, Mail, Power } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface Contact {
   id: string;
   name: string;
   phone: string;
   email?: string;
-  signature?: string;
+  signature: number;
   group_id: string;
   contact_groups: {
     name: string;
@@ -31,13 +32,17 @@ interface ContactsTableProps {
   contacts: Contact[];
   onEdit: (contact: Contact) => void;
   onDelete: (contactId: string) => void;
+  onToggleSignature: (contactId: string, currentSignature: number) => void;
 }
 
 export const ContactsTable: React.FC<ContactsTableProps> = ({
   contacts,
   onEdit,
   onDelete,
+  onToggleSignature,
 }) => {
+  // Ordenar contatos: desativados (signature = 0) primeiro, depois ativos (signature = 1)
+  const sortedContacts = [...contacts].sort((a, b) => a.signature - b.signature);
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -67,12 +72,18 @@ export const ContactsTable: React.FC<ContactsTableProps> = ({
             <TableHead>Email</TableHead>
             <TableHead>Grupo</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Signature</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {contacts.map((contact) => (
-            <TableRow key={contact.id} className="hover:bg-muted/50">
+          {sortedContacts.map((contact) => (
+            <TableRow 
+              key={contact.id} 
+              className={`hover:bg-muted/50 transition-colors ${
+                contact.signature === 0 ? 'bg-muted/30 border-l-4 border-l-orange-400' : ''
+              }`}
+            >
               <TableCell>
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="text-xs">
@@ -82,12 +93,9 @@ export const ContactsTable: React.FC<ContactsTableProps> = ({
               </TableCell>
               <TableCell className="font-medium">
                 <div>
-                  <p className="font-medium">{contact.name}</p>
-                  {contact.signature && (
-                    <p className="text-xs text-muted-foreground truncate max-w-[150px]">
-                      {contact.signature}
-                    </p>
-                  )}
+                  <p className={`font-medium ${contact.signature === 0 ? 'text-muted-foreground' : ''}`}>
+                    {contact.name}
+                  </p>
                 </div>
               </TableCell>
               <TableCell>
@@ -131,6 +139,18 @@ export const ContactsTable: React.FC<ContactsTableProps> = ({
                     <span className="text-xs text-muted-foreground">OK</span>
                   </div>
                 )}
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={contact.signature === 1}
+                    onCheckedChange={() => onToggleSignature(contact.id, contact.signature)}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                  <span className={`text-xs ${contact.signature === 1 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    {contact.signature === 1 ? 'Ativo' : 'Inativo'}
+                  </span>
+                </div>
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end space-x-1">
