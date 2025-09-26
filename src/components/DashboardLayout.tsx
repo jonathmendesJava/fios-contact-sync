@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -8,6 +8,9 @@ import {
   Menu,
   Send
 } from 'lucide-react';
+import Particles from "react-tsparticles";
+import { loadSlim } from "tsparticles-slim";
+import type { Container, Engine } from "tsparticles-engine";
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -143,6 +146,14 @@ function AppSidebar({ activeTab, onTabChange }: { activeTab: string, onTabChange
 const DashboardLayout = () => {
   const [activeTab, setActiveTab] = useState('contacts');
 
+  const particlesInit = useCallback(async (engine: Engine) => {
+    await loadSlim(engine);
+  }, []);
+
+  const particlesLoaded = useCallback(async (container: Container | undefined) => {
+    // Particles loaded callback
+  }, []);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'contacts':
@@ -162,12 +173,102 @@ const DashboardLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full relative overflow-hidden">
+        {/* Subtle Space Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800"></div>
+        
+        {/* Minimal Particles for Business Environment */}
+        <Particles
+          id="dashboard-particles"
+          init={particlesInit}
+          loaded={particlesLoaded}
+          className="absolute inset-0 z-0"
+          options={{
+            background: {
+              color: {
+                value: "transparent",
+              },
+            },
+            fpsLimit: 30,
+            interactivity: {
+              events: {
+                onHover: {
+                  enable: true,
+                  mode: "grab",
+                },
+                resize: true,
+              },
+              modes: {
+                grab: {
+                  distance: 100,
+                  links: {
+                    opacity: 0.05,
+                    color: "#64ffda",
+                  },
+                },
+              },
+            },
+            particles: {
+              color: {
+                value: ["#64ffda", "#bb86fc"],
+              },
+              links: {
+                color: "#64ffda",
+                distance: 120,
+                enable: false,
+                opacity: 0.02,
+                width: 0.5,
+              },
+              move: {
+                direction: "none",
+                enable: true,
+                outModes: {
+                  default: "out",
+                },
+                random: true,
+                speed: 0.2,
+                straight: false,
+              },
+              number: {
+                density: {
+                  enable: true,
+                  area: 2000,
+                },
+                value: 15,
+              },
+              opacity: {
+                value: { min: 0.1, max: 0.3 },
+                animation: {
+                  enable: true,
+                  speed: 0.5,
+                  sync: false,
+                },
+              },
+              shape: {
+                type: "circle",
+              },
+              size: {
+                value: { min: 0.5, max: 2 },
+              },
+            },
+            detectRetina: true,
+            reduceDuplicates: true,
+          }}
+        />
+
+        {/* Subtle Nebula Effects */}
+        <div className="absolute top-0 right-0 w-96 h-96 opacity-5 dark:opacity-10">
+          <div className="w-full h-full rounded-full bg-gradient-radial from-purple-500/20 via-purple-600/10 to-transparent blur-3xl animate-nebula-slow"></div>
+        </div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 opacity-5 dark:opacity-10">
+          <div className="w-full h-full rounded-full bg-gradient-radial from-cyan-500/20 via-blue-500/10 to-transparent blur-3xl animate-nebula"></div>
+        </div>
+
         <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
         
-        <main className="flex-1">
+        <main className="flex-1 relative z-10">
           {/* Header with trigger */}
-          <header className="h-16 flex items-center border-b px-4">
+          <header className="h-16 flex items-center border-b px-4 bg-background/95 backdrop-blur-sm">
             <SidebarTrigger className="mr-4" />
             <div className="flex-1">
               <h1 className="text-xl font-semibold">
@@ -180,7 +281,7 @@ const DashboardLayout = () => {
           </header>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-6 bg-background/80 backdrop-blur-sm min-h-[calc(100vh-4rem)]">
             {renderContent()}
           </div>
         </main>
