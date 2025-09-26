@@ -140,6 +140,47 @@ All colors MUST be HSL.
     }
   }
   
+  @keyframes black-hole {
+    0% {
+      transform: rotate(0deg) scale(1);
+      filter: blur(8px);
+    }
+    50% {
+      transform: rotate(180deg) scale(1.1);
+      filter: blur(6px);
+    }
+    100% {
+      transform: rotate(360deg) scale(1);
+      filter: blur(8px);
+    }
+  }
+  
+  @keyframes nebula {
+    0%, 100% {
+      opacity: 0.8;
+      transform: scale(1) rotate(0deg);
+    }
+    33% {
+      opacity: 0.6;
+      transform: scale(1.1) rotate(120deg);
+    }
+    66% {
+      opacity: 0.9;
+      transform: scale(0.9) rotate(240deg);
+    }
+  }
+  
+  @keyframes nebula-slow {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1) rotate(0deg);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(1.05) rotate(180deg);
+    }
+  }
+  
   .animate-fade-in {
     animation: fade-in 0.8s ease-out forwards;
   }
@@ -156,6 +197,18 @@ All colors MUST be HSL.
     animation: float 6s ease-in-out infinite;
   }
   
+  .animate-black-hole {
+    animation: black-hole 20s linear infinite;
+  }
+  
+  .animate-nebula {
+    animation: nebula 15s ease-in-out infinite;
+  }
+  
+  .animate-nebula-slow {
+    animation: nebula-slow 25s ease-in-out infinite;
+  }
+  
   /* Backdrop blur utilities */
   .backdrop-blur-cosmic {
     backdrop-filter: blur(8px) saturate(120%);
@@ -166,7 +219,10 @@ All colors MUST be HSL.
     .animate-fade-in,
     .animate-scale-in,
     .animate-glow-pulse,
-    .animate-float {
+    .animate-float,
+    .animate-black-hole,
+    .animate-nebula,
+    .animate-nebula-slow {
       animation: none;
     }
   }
