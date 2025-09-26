@@ -41,6 +41,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
   groupName,
   onContactAdded,
 }) => {
+  const { currentTenant } = useTenant();
   const [activeTab, setActiveTab] = useState('manual');
   const [loading, setLoading] = useState(false);
   
@@ -262,6 +263,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
                 signature: 1, // Sempre ativo por padrão
                 group_id: groupId,
                 user_id: userId,
+                tenant_id: currentTenant?.id!,
               }]);
 
             if (insertError) throw insertError;
