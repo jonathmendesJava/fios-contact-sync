@@ -113,65 +113,71 @@ const Auth = () => {
             },
             modes: {
               connect: {
+                distance: 180,
+                links: {
+                  opacity: 0.4,
+                },
+                radius: 80,
+              },
+              grab: {
                 distance: 150,
                 links: {
                   opacity: 0.3,
-                },
-                radius: 60,
-              },
-              grab: {
-                distance: 120,
-                links: {
-                  opacity: 0.2,
                   color: "#64ffda",
                 },
               },
               push: {
-                quantity: 4,
+                quantity: 6,
               },
             },
           },
-          particles: {
-            color: {
-              value: "#64ffda",
-            },
-            links: {
-              color: "#64ffda",
-              distance: 90,
-              enable: true,
-              opacity: 0.1,
-              width: 1,
-            },
-            move: {
-              direction: "none",
-              enable: true,
-              outModes: {
-                default: "bounce",
+            particles: {
+              color: {
+                value: "#64ffda",
               },
-              random: true,
-              speed: 0.4,
-              straight: false,
-              attract: {
+              links: {
+                color: "#64ffda",
+                distance: 120,
                 enable: true,
-                rotateX: 300,
-                rotateY: 600,
+                opacity: 0.15,
+                width: 1,
               },
-            },
-            number: {
-              density: {
+              move: {
+                direction: "none",
                 enable: true,
-                area: 1200,
+                outModes: {
+                  default: "out",
+                },
+                random: true,
+                speed: 0.3,
+                straight: false,
+                attract: {
+                  enable: true,
+                  rotateX: 200,
+                  rotateY: 400,
+                },
+                center: {
+                  x: 50,
+                  y: 50,
+                  mode: "percent",
+                  radius: 300,
+                },
               },
-              value: 60,
-            },
-            opacity: {
-              value: { min: 0.3, max: 0.8 },
-              animation: {
-                enable: true,
-                speed: 1,
-                sync: false,
+              number: {
+                density: {
+                  enable: true,
+                  area: 800,
+                },
+                value: 140,
               },
-            },
+              opacity: {
+                value: { min: 0.4, max: 0.9 },
+                animation: {
+                  enable: true,
+                  speed: 1.2,
+                  sync: false,
+                },
+              },
             shape: {
               type: ["circle", "triangle", "star", "diamond", "polygon"],
               options: {
