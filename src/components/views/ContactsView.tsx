@@ -16,7 +16,8 @@ import {
   AlertTriangle,
   Users,
   Phone,
-  Mail
+  Mail,
+  UserX
 } from 'lucide-react';
 import {
   Dialog,
@@ -338,6 +339,9 @@ export const ContactsView: React.FC = () => {
   const totalDuplicates = groupedContacts.reduce((sum, group) => 
     sum + group.contacts.filter(c => c.isDuplicate).length, 0
   );
+  const totalDisabledSignatures = groupedContacts.reduce((sum, group) => 
+    sum + group.contacts.filter(c => c.signature === 0).length, 0
+  );
 
   return (
     <div className="space-y-6">
@@ -347,7 +351,7 @@ export const ContactsView: React.FC = () => {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -373,6 +377,15 @@ export const ContactsView: React.FC = () => {
               <span className="text-sm font-medium">Duplicados</span>
             </div>
             <div className="text-2xl font-bold text-destructive">{totalDuplicates}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <UserX className="h-4 w-4 text-orange-600" />
+              <span className="text-sm font-medium">Assinaturas Desativadas</span>
+            </div>
+            <div className="text-2xl font-bold text-orange-600">{totalDisabledSignatures}</div>
           </CardContent>
         </Card>
       </div>
