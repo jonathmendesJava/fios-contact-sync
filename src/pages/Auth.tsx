@@ -107,24 +107,46 @@ const Auth = () => {
               },
               onHover: {
                 enable: true,
-                mode: "grab",
+                mode: ["grab", "connect", "attract"],
               },
               resize: true,
             },
             modes: {
               connect: {
-                distance: 180,
+                distance: 200,
                 links: {
-                  opacity: 0.4,
+                  opacity: 0.8,
+                  color: "#64ffda",
+                  width: 1.5,
                 },
-                radius: 80,
+                radius: 120,
               },
               grab: {
-                distance: 180,
+                distance: 220,
                 links: {
-                  opacity: 0.6,
+                  opacity: 0.7,
                   color: "#64ffda",
+                  width: 2,
+                  triangles: {
+                    enable: true,
+                    opacity: 0.3,
+                    color: "#64ffda",
+                  },
                 },
+              },
+              attract: {
+                distance: 150,
+                duration: 0.4,
+                easing: "ease-out-quad",
+                factor: 3,
+                maxSpeed: 50,
+                speed: 1,
+              },
+              bubble: {
+                distance: 180,
+                size: 8,
+                duration: 2,
+                opacity: 0.8,
               },
               push: {
                 quantity: 6,
@@ -137,10 +159,16 @@ const Auth = () => {
               },
               links: {
                 color: "#64ffda",
-                distance: 120,
+                distance: 150,
                 enable: false,
-                opacity: 0.15,
+                opacity: 0.2,
                 width: 1,
+                triangles: {
+                  enable: true,
+                  opacity: 0.15,
+                  color: "#64ffda",
+                },
+                warp: true,
               },
               move: {
                 direction: "none",
