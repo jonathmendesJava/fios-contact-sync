@@ -120,9 +120,9 @@ const Auth = () => {
                 radius: 80,
               },
               grab: {
-                distance: 150,
+                distance: 180,
                 links: {
-                  opacity: 0.3,
+                  opacity: 0.6,
                   color: "#64ffda",
                 },
               },
@@ -138,7 +138,7 @@ const Auth = () => {
               links: {
                 color: "#64ffda",
                 distance: 120,
-                enable: true,
+                enable: false,
                 opacity: 0.15,
                 width: 1,
               },
@@ -179,7 +179,7 @@ const Auth = () => {
                 },
               },
             shape: {
-              type: ["circle", "triangle", "star", "diamond", "polygon"],
+              type: ["circle"],
               options: {
                 star: {
                   sides: 5
