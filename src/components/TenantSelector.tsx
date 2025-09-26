@@ -1,29 +1,46 @@
-import React from 'react';
-import { Building2, Check, ChevronsUpDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { useTenant } from '@/hooks/useTenant';
 
 export function TenantSelector() {
-  const [open, setOpen] = React.useState(false);
-  const { currentTenant, userTenants, switchTenant, loading } = useTenant();
+  const { currentTenant, userTenants, switchTenant, loading, getDisplayName } = useTenant();
+  const [open, setOpen] = useState(false);
 
-  if (loading || !currentTenant) {
+  if (loading) {
+    return (
+      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <Building className="h-4 w-4" />
+        <span>Carregando...</span>
+      </div>
+    );
+  }
+
+  if (!currentTenant || userTenants.length === 0) {
     return null;
   }
 
+  const displayName = getDisplayName();
+
+  // If user only has one tenant, show static name
+  if (userTenants.length === 1) {
+    return (
+      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <Building className="h-4 w-4" />
+        <span>{displayName}</span>
+        {currentTenant?.role && (
+          <span className="text-xs bg-muted px-2 py-1 rounded">
+            {currentTenant.role === 'owner' ? 'Proprietário' : 
+             currentTenant.role === 'admin' ? 'Admin' : 'Membro'}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // Multiple tenants - show selector
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -31,20 +48,23 @@ export function TenantSelector() {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[280px] justify-between"
+          className="w-[250px] justify-between"
         >
           <div className="flex items-center space-x-2">
-            <Building2 className="h-4 w-4" />
-            <span className="truncate">{currentTenant.name}</span>
-            <Badge variant={currentTenant.role === 'owner' ? 'default' : 'secondary'} className="ml-auto">
-              {currentTenant.role === 'owner' ? 'Proprietário' : 
-               currentTenant.role === 'admin' ? 'Admin' : 'Membro'}
-            </Badge>
+            <Building className="h-4 w-4" />
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-medium">{displayName}</span>
+              {userTenants.length > 1 && (
+                <span className="text-xs text-muted-foreground">
+                  {userTenants.length} organizações disponíveis
+                </span>
+              )}
+            </div>
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0">
+      <PopoverContent className="w-[250px] p-0">
         <Command>
           <CommandInput placeholder="Buscar organização..." />
           <CommandEmpty>Nenhuma organização encontrada.</CommandEmpty>
@@ -52,23 +72,17 @@ export function TenantSelector() {
             {userTenants.map((tenant) => (
               <CommandItem
                 key={tenant.id}
-                value={tenant.name}
                 onSelect={() => {
                   switchTenant(tenant.id);
                   setOpen(false);
                 }}
               >
-                <Check
-                  className={`mr-2 h-4 w-4 ${
-                    tenant.id === currentTenant.id ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-                <div className="flex-1 flex items-center justify-between">
-                  <span className="truncate">{tenant.name}</span>
-                  <Badge variant={tenant.role === 'owner' ? 'default' : 'secondary'}>
+                <div className="flex flex-col">
+                  <span className="font-medium">{tenant.name}</span>
+                  <span className="text-xs text-muted-foreground">
                     {tenant.role === 'owner' ? 'Proprietário' : 
-                     tenant.role === 'admin' ? 'Admin' : 'Membro'}
-                  </Badge>
+                     tenant.role === 'admin' ? 'Administrador' : 'Membro'}
+                  </span>
                 </div>
               </CommandItem>
             ))}

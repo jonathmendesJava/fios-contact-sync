@@ -1,30 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Building, Users, Activity, Eye, Edit, Trash } from 'lucide-react';
 import CreateOrganizationDialog from '@/components/dialogs/CreateOrganizationDialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { 
-  Building2, 
-  Users, 
-  Activity, 
-  AlertTriangle,
-  Plus,
-  Settings,
-  Eye,
-  Edit,
-  Trash2
-} from 'lucide-react';
-
-interface DashboardStats {
-  totalOrganizations: number;
-  activeOrganizations: number;
-  totalUsers: number;
-  recentActivity: number;
-}
+import { CreateUserDialog } from '@/components/dialogs/CreateUserDialog';  
+import { ViewOrganizationDialog } from '@/components/dialogs/ViewOrganizationDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 
 interface Organization {
   id: string;
@@ -34,328 +18,107 @@ interface Organization {
   is_active: boolean;
   max_users: number;
   created_at: string;
-  user_count: number;
 }
 
 const SuperAdminDashboard = () => {
   const { superAdmin } = useSuperAdmin();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalOrganizations: 0,
-    activeOrganizations: 0,
-    totalUsers: 0,
-    recentActivity: 0
-  });
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [stats, setStats] = useState({ totalOrgs: 0, activeOrgs: 0, totalUsers: 0, activeUsers: 0 });
   const [loading, setLoading] = useState(true);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createOrgOpen, setCreateOrgOpen] = useState(false);
+  const [createUserOpen, setCreateUserOpen] = useState(false);
+  const [viewOrgOpen, setViewOrgOpen] = useState(false);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchData = async () => {
     try {
-      // Fetch organizations with user counts
-      const { data: orgsData, error: orgsError } = await supabase
+      const { data: orgsData, error } = await supabase
         .from('tenants')
-        .select(`
-          *,
-          user_tenants (count)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (orgsError) throw orgsError;
+      if (error) throw error;
 
-      const organizations = orgsData?.map(org => ({
-        ...org,
-        user_count: org.user_tenants?.[0]?.count || 0
-      })) || [];
-
-      setOrganizations(organizations);
-
-      // Calculate stats
-      const totalOrgs = organizations.length;
-      const activeOrgs = organizations.filter(org => org.is_active).length;
-      const totalUsers = organizations.reduce((sum, org) => sum + org.user_count, 0);
-
+      setOrganizations(orgsData || []);
       setStats({
-        totalOrganizations: totalOrgs,
-        activeOrganizations: activeOrgs,
-        totalUsers,
-        recentActivity: 0 // Placeholder for now
+        totalOrgs: orgsData?.length || 0,
+        activeOrgs: orgsData?.filter(org => org.is_active).length || 0,
+        totalUsers: 0,
+        activeUsers: 0
       });
-
     } catch (error: any) {
       toast({
         title: "Erro",
-        description: "Erro ao carregar dados do dashboard: " + error.message,
-        variant: "destructive",
+        description: error.message,
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleOrganizationStatus = async (orgId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('tenants')
-        .update({ is_active: !currentStatus })
-        .eq('id', orgId);
-
-      if (error) throw error;
-
-      // Log the action
-      if (superAdmin) {
-        await supabase.rpc('log_super_admin_action', {
-          _admin_id: superAdmin.id,
-          _action: currentStatus ? 'deactivate_organization' : 'activate_organization',
-          _resource_type: 'organization',
-          _resource_id: orgId,
-          _details: { previous_status: currentStatus, new_status: !currentStatus }
-        });
-      }
-
-      toast({
-        title: "Sucesso",
-        description: `Organização ${!currentStatus ? 'ativada' : 'desativada'} com sucesso`,
-      });
-
-      fetchDashboardData();
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteOrganization = async (orgId: string, orgName: string) => {
-    try {
-      const { error } = await supabase
-        .from('tenants')
-        .delete()
-        .eq('id', orgId);
-
-      if (error) throw error;
-
-      // Log the action
-      if (superAdmin) {
-        await supabase.rpc('log_super_admin_action', {
-          _admin_id: superAdmin.id,
-          _action: 'delete_organization',
-          _resource_type: 'organization',
-          _resource_id: orgId,
-          _details: { name: orgName }
-        });
-      }
-
-      toast({
-        title: "Sucesso",
-        description: "Organização excluída com sucesso",
-      });
-
-      fetchDashboardData();
-    } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
-
   if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-      </div>
-    );
+    return <div className="flex justify-center items-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="border-b border-purple-800/30 pb-6">
-        <h1 className="text-3xl font-bold text-white">
-          Bem-vindo, {superAdmin?.full_name}
-        </h1>
-        <p className="text-purple-200 mt-2">
-          Console de administração do sistema
-        </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="border-purple-800/30 bg-black/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-200">
-              Total de Organizações
-            </CardTitle>
-            <Building2 className="h-4 w-4 text-purple-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.totalOrganizations}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-purple-800/30 bg-black/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-200">
-              Organizações Ativas
-            </CardTitle>
-            <Activity className="h-4 w-4 text-green-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.activeOrganizations}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-purple-800/30 bg-black/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-200">
-              Total de Usuários
-            </CardTitle>
-            <Users className="h-4 w-4 text-blue-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-purple-800/30 bg-black/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-200">
-              Atividade Recente
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats.recentActivity}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Organizations Table */}
-      <Card className="border-purple-800/30 bg-black/50">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-white">Organizações</CardTitle>
-              <CardDescription className="text-purple-200">
-                Gerencie todas as organizações do sistema
-              </CardDescription>
-            </div>
-            <Button 
-              onClick={() => setCreateDialogOpen(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">Painel administrativo</p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => setCreateUserOpen(true)} variant="outline">
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Usuário
+            </Button>
+            <Button onClick={() => setCreateOrgOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Nova Organização
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {organizations.map((org) => (
-              <div
-                key={org.id}
-                className="flex items-center justify-between p-4 rounded-lg border border-purple-800/30 bg-black/30"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-white">{org.name}</h3>
-                    <Badge 
-                      variant={org.is_active ? "default" : "secondary"}
-                      className={org.is_active ? "bg-green-600" : "bg-gray-600"}
-                    >
-                      {org.is_active ? 'Ativa' : 'Inativa'}
-                    </Badge>
-                    <Badge variant="outline" className="text-purple-200">
-                      {org.environment}
-                    </Badge>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card><CardContent className="p-6"><div className="text-2xl font-bold">{stats.totalOrgs}</div><p className="text-sm text-muted-foreground">Total Organizações</p></CardContent></Card>
+          <Card><CardContent className="p-6"><div className="text-2xl font-bold">{stats.activeOrgs}</div><p className="text-sm text-muted-foreground">Organizações Ativas</p></CardContent></Card>
+          <Card><CardContent className="p-6"><div className="text-2xl font-bold">{stats.totalUsers}</div><p className="text-sm text-muted-foreground">Total Usuários</p></CardContent></Card>
+          <Card><CardContent className="p-6"><div className="text-2xl font-bold">{stats.activeUsers}</div><p className="text-sm text-muted-foreground">Usuários Ativos</p></CardContent></Card>
+        </div>
+
+        <Card>
+          <CardHeader><CardTitle>Organizações</CardTitle></CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {organizations.map((org) => (
+                <div key={org.id} className="flex items-center justify-between p-4 rounded-lg border">
+                  <div>
+                    <h3 className="font-semibold">{org.name}</h3>
+                    <p className="text-sm text-muted-foreground">{org.environment}</p>
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-purple-200">
-                    <span>ID: {org.custom_org_id || org.id.slice(0, 8)}</span>
-                    <span>Usuários: {org.user_count}/{org.max_users}</span>
-                    <span>Criada: {new Date(org.created_at).toLocaleDateString('pt-BR')}</span>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => { setSelectedOrgId(org.id); setViewOrgOpen(true); }}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="text-purple-300 hover:text-white">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-purple-300 hover:text-white">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-purple-300 hover:text-white"
-                    onClick={() => toggleOrganizationStatus(org.id, org.is_active)}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-black/90 border-purple-800/50 text-white">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                        <AlertDialogDescription className="text-purple-200">
-                          Tem certeza que deseja excluir a organização "{org.name}"? 
-                          Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-transparent border-purple-800/50 text-purple-200 hover:bg-purple-800/20">
-                          Cancelar
-                        </AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => handleDeleteOrganization(org.id, org.name)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-            {organizations.length === 0 && (
-              <div className="text-center py-8">
-                <Building2 className="h-12 w-12 mx-auto text-purple-400 mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">Nenhuma organização encontrada</h3>
-                <p className="text-purple-200 mb-4">
-                  Comece criando sua primeira organização
-                </p>
-                <Button 
-                  onClick={() => setCreateDialogOpen(true)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar Primeira Organização
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Create Organization Dialog */}
-      <CreateOrganizationDialog 
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onSuccess={fetchDashboardData}
-      />
-    </div>  
+        <CreateOrganizationDialog open={createOrgOpen} onOpenChange={setCreateOrgOpen} onSuccess={fetchData} />
+        <CreateUserDialog open={createUserOpen} onOpenChange={setCreateUserOpen} onSuccess={fetchData} />
+        <ViewOrganizationDialog open={viewOrgOpen} onOpenChange={setViewOrgOpen} organizationId={selectedOrgId} />
+      </div>
+    </div>
   );
 };
 

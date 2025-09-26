@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -15,6 +15,7 @@ interface TenantContextType {
   loading: boolean;
   switchTenant: (tenantId: string) => void;
   refreshTenants: () => Promise<void>;
+  getDisplayName: () => string;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -97,12 +98,26 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session, user]);
 
+  // Get display name - if user has multiple tenants, show generic name
+  const getDisplayName = useCallback(() => {
+    if (!currentTenant) return '';
+    
+    // If user has multiple organizations, show generic name
+    if (userTenants.length > 1) {
+      return 'Fios Tecnologia';
+    }
+    
+    // Single organization, show specific name
+    return currentTenant.name;
+  }, [currentTenant, userTenants.length]);
+
   const value = {
     currentTenant,
     userTenants,
     loading,
     switchTenant,
-    refreshTenants
+    refreshTenants,
+    getDisplayName
   };
 
   return (
