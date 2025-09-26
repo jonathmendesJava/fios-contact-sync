@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
 import { normalizePhoneNumber, isValidBrazilianPhone, getPhoneValidationError } from '@/lib/phone-utils';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Upload, FileText, AlertTriangle, CheckCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -38,6 +39,7 @@ interface ImportResult {
 }
 
 export const CSVImporter = () => {
+  const { currentTenant } = useTenant();
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string>("");
   const [csvData, setCsvData] = useState<CSVData[]>([]);
@@ -191,6 +193,12 @@ export const CSVImporter = () => {
           if (isDuplicate) {
             importResult.duplicates++;
           } else {
+            if (!currentTenant) {
+              importResult.errors.push(`Linha ${i + 2}: Nenhum tenant selecionado`);
+              setProgress(Math.round(((i + 1) / csvData.length) * 100));
+              continue;
+            }
+
             // Insert new contact
             const { error: insertError } = await supabase
               .from("contacts")
@@ -201,6 +209,7 @@ export const CSVImporter = () => {
                 signature: 1, // Sempre ativo por padrão
                 group_id: selectedGroup,
                 user_id: (await supabase.auth.getUser()).data.user!.id,
+                tenant_id: currentTenant.id,
               }]);
 
             if (insertError) throw insertError;

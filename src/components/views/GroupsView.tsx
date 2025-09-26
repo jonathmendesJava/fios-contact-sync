@@ -4,7 +4,7 @@ import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { GroupCard } from '@/components/ui/group-card';
 import { AddContactToGroupDialog } from '@/components/dialogs/AddContactToGroupDialog';
 import { 
@@ -45,6 +45,7 @@ interface ImportResult {
 }
 
 export const GroupsView: React.FC = () => {
+  const { currentTenant } = useTenant();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -164,8 +165,14 @@ export const GroupsView: React.FC = () => {
           description: 'Grupo atualizado com sucesso!',
         });
       } else {
-        const { currentTenant } = useTenant();
-        if (!currentTenant) return;
+        if (!currentTenant) {
+          toast({
+            title: 'Erro',
+            description: 'Nenhum tenant selecionado',
+            variant: 'destructive',
+          });
+          return;
+        }
 
         const { error } = await supabase
           .from('contact_groups')
@@ -327,6 +334,15 @@ export const GroupsView: React.FC = () => {
     };
 
     try {
+      if (!currentTenant) {
+        toast({
+          title: 'Erro',
+          description: 'Nenhum tenant selecionado',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const userId = (await supabase.auth.getUser()).data.user!.id;
 
       for (let i = 0; i < csvData.length; i++) {
@@ -339,6 +355,7 @@ export const GroupsView: React.FC = () => {
             .select('id')
             .eq('name', groupName)
             .eq('user_id', userId)
+            .eq('tenant_id', currentTenant.id)
             .maybeSingle();
 
           if (checkError) throw checkError;
@@ -352,6 +369,7 @@ export const GroupsView: React.FC = () => {
               .insert([{
                 name: groupName,
                 user_id: userId,
+                tenant_id: currentTenant.id
               }]);
 
             if (insertError) throw insertError;

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Edit2, Contact, Search, Filter } from "lucide-react";
 import {
   Dialog,
@@ -42,6 +43,7 @@ interface Group {
 }
 
 export const ContactManager = () => {
+  const { currentTenant } = useTenant();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
@@ -125,6 +127,15 @@ export const ContactManager = () => {
     if (!formData.name.trim() || !formData.phone.trim() || !formData.group_id) return;
 
     try {
+      if (!currentTenant) {
+        toast({
+          title: "Erro",
+          description: "Nenhum tenant selecionado",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const contactData = {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
@@ -132,6 +143,7 @@ export const ContactManager = () => {
         signature: 1, // Sempre ativo por padrão
         group_id: formData.group_id,
         user_id: (await supabase.auth.getUser()).data.user!.id,
+        tenant_id: currentTenant.id,
       };
 
       if (editingContact) {

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { getPhoneValidationError, isValidBrazilianPhone } from '@/lib/phone-utils';
 import { 
@@ -41,6 +41,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
   groupName,
   onContactAdded,
 }) => {
+  const { currentTenant } = useTenant();
   const [activeTab, setActiveTab] = useState('manual');
   const [loading, setLoading] = useState(false);
   
@@ -91,6 +92,15 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
 
     setLoading(true);
     try {
+      if (!currentTenant) {
+        toast({
+          title: 'Erro',
+          description: 'Nenhum tenant selecionado',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const userId = (await supabase.auth.getUser()).data.user!.id;
       
       const contactData = {
@@ -100,14 +110,12 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
         signature: 1, // Sempre ativo por padrão
         group_id: groupId,
         user_id: userId,
+        tenant_id: currentTenant.id
       };
-
-      const { currentTenant } = useTenant();
-      if (!currentTenant) return;
 
       const { error } = await supabase
         .from('contacts')
-        .insert([{ ...contactData, tenant_id: currentTenant.id }]);
+        .insert([contactData]);
 
       if (error) throw error;
 
@@ -225,6 +233,15 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
     };
 
     try {
+      if (!currentTenant) {
+        toast({
+          title: 'Erro',
+          description: 'Nenhum tenant selecionado',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const userId = (await supabase.auth.getUser()).data.user!.id;
 
       for (let i = 0; i < csvData.length; i++) {
@@ -245,6 +262,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
             .select('id')
             .eq('phone', contact.phone)
             .eq('group_id', groupId)
+            .eq('tenant_id', currentTenant.id)
             .maybeSingle();
 
           if (checkError) throw checkError;
@@ -262,6 +280,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
                 signature: 1, // Sempre ativo por padrão
                 group_id: groupId,
                 user_id: userId,
+                tenant_id: currentTenant.id
               }]);
 
             if (insertError) throw insertError;

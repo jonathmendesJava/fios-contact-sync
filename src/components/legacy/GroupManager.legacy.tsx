@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Plus, Trash2, Edit2, Users } from "lucide-react";
 import {
   Dialog,
@@ -22,6 +23,7 @@ interface Group {
 }
 
 export const GroupManager = () => {
+  const { currentTenant } = useTenant();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -79,9 +81,22 @@ export const GroupManager = () => {
           description: "Grupo atualizado com sucesso!",
         });
       } else {
+        if (!currentTenant) {
+          toast({
+            title: "Erro",
+            description: "Nenhum tenant selecionado",
+            variant: "destructive",
+          });
+          return;
+        }
+
         const { error } = await supabase
           .from("contact_groups")
-          .insert([{ name: groupName.trim(), user_id: (await supabase.auth.getUser()).data.user!.id }]);
+          .insert([{ 
+            name: groupName.trim(), 
+            user_id: (await supabase.auth.getUser()).data.user!.id,
+            tenant_id: currentTenant.id
+          }]);
 
         if (error) throw error;
 
