@@ -10,6 +10,9 @@ import { Mail } from "lucide-react";
 import Particles from "react-tsparticles";
 import { loadSlim } from "tsparticles-slim";
 import type { Container, Engine } from "tsparticles-engine";
+import nebulaPurple from "@/assets/nebula-purple.png";
+import nebulaCyan from "@/assets/nebula-cyan.png";
+import nebulaPink from "@/assets/nebula-pink.png";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -60,6 +63,50 @@ const Auth = () => {
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
       {/* Lunar Background */}
       <div className="absolute inset-0 bg-gradient-radial from-slate-900 via-slate-950 to-black"></div>
+      
+      {/* Distant Star Field */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            radial-gradient(1px 1px at 20px 30px, white, transparent),
+            radial-gradient(1px 1px at 40px 70px, white, transparent),
+            radial-gradient(0.5px 0.5px at 90px 40px, white, transparent),
+            radial-gradient(0.5px 0.5px at 130px 80px, white, transparent),
+            radial-gradient(1px 1px at 160px 30px, white, transparent),
+            radial-gradient(0.5px 0.5px at 200px 60px, white, transparent),
+            radial-gradient(1px 1px at 240px 90px, white, transparent),
+            radial-gradient(0.5px 0.5px at 280px 20px, white, transparent),
+            radial-gradient(1px 1px at 320px 70px, white, transparent),
+            radial-gradient(0.5px 0.5px at 360px 40px, white, transparent)
+          `,
+          backgroundRepeat: 'repeat',
+          backgroundSize: '400px 200px',
+          opacity: 0.3
+        }} />
+      </div>
+
+      {/* Realistic Nebulae with Images */}
+      <div className="absolute top-0 left-0 w-80 h-80 opacity-20 animate-nebula">
+        <img 
+          src={nebulaPurple} 
+          alt="" 
+          className="w-full h-full object-cover blur-sm mix-blend-screen rotate-12"
+        />
+      </div>
+      <div className="absolute bottom-0 right-0 w-96 h-64 opacity-15 animate-nebula-slow">
+        <img 
+          src={nebulaCyan} 
+          alt="" 
+          className="w-full h-full object-cover blur-md mix-blend-screen -rotate-45"
+        />
+      </div>
+      <div className="absolute top-1/2 left-0 w-64 h-96 opacity-18 animate-nebula">
+        <img 
+          src={nebulaPink} 
+          alt="" 
+          className="w-full h-full object-cover blur-lg mix-blend-screen rotate-90"
+        />
+      </div>
       
       {/* Subtle Moon */}
       <div className="absolute top-20 right-20 w-32 h-32 rounded-full bg-gradient-radial from-slate-400/20 to-transparent blur-sm"></div>
@@ -140,7 +187,7 @@ const Auth = () => {
                 enable: true,
                 area: 1200,
               },
-              value: 45,
+              value: 60,
             },
             opacity: {
               value: { min: 0.3, max: 0.8 },
@@ -151,7 +198,15 @@ const Auth = () => {
               },
             },
             shape: {
-              type: ["circle", "triangle"],
+              type: ["circle", "triangle", "star", "diamond", "polygon"],
+              options: {
+                star: {
+                  sides: 5
+                },
+                polygon: {
+                  sides: 6
+                }
+              }
             },
             size: {
               value: { min: 1, max: 4 },
@@ -174,15 +229,14 @@ const Auth = () => {
         }}
       />
       
-      {/* Black Holes */}
-      <div className="absolute top-1/4 left-1/4 w-20 h-20 rounded-full bg-gradient-radial from-transparent via-purple-900/30 to-black/80 animate-black-hole"></div>
-      <div className="absolute bottom-1/3 right-1/5 w-16 h-16 rounded-full bg-gradient-radial from-transparent via-blue-900/20 to-black/60 animate-black-hole"></div>
-      <div className="absolute top-3/4 right-1/3 w-12 h-12 rounded-full bg-gradient-radial from-transparent via-indigo-900/25 to-black/70 animate-black-hole"></div>
+      {/* Enhanced Black Holes */}
+      <div className="absolute top-1/4 left-1/4 w-20 h-20 rounded-full bg-gradient-radial from-transparent via-purple-900/30 to-black/80 animate-black-hole shadow-2xl shadow-purple-500/20"></div>
+      <div className="absolute bottom-1/3 right-1/5 w-16 h-16 rounded-full bg-gradient-radial from-transparent via-blue-900/20 to-black/60 animate-black-hole shadow-2xl shadow-blue-500/20"></div>
+      <div className="absolute top-3/4 right-1/3 w-12 h-12 rounded-full bg-gradient-radial from-transparent via-indigo-900/25 to-black/70 animate-black-hole shadow-2xl shadow-indigo-500/20"></div>
       
-      {/* Distant Nebulae */}
-      <div className="absolute top-10 left-10 w-40 h-40 rounded-full bg-gradient-radial from-purple-500/10 via-purple-600/5 to-transparent blur-xl animate-nebula"></div>
-      <div className="absolute bottom-20 right-10 w-60 h-32 rounded-full bg-gradient-radial from-cyan-500/8 via-blue-500/4 to-transparent blur-2xl animate-nebula-slow"></div>
-      <div className="absolute top-1/2 left-5 w-32 h-48 rounded-full bg-gradient-radial from-pink-500/6 via-purple-400/3 to-transparent blur-xl animate-nebula"></div>
+      {/* Distant Galaxies */}
+      <div className="absolute top-16 right-1/3 w-24 h-2 bg-gradient-to-r from-transparent via-white/5 to-transparent rotate-45 blur-sm"></div>
+      <div className="absolute bottom-32 left-1/4 w-20 h-1 bg-gradient-to-r from-transparent via-cyan-300/10 to-transparent -rotate-12 blur-sm"></div>
       
       <Card className="w-full max-w-md relative z-10 bg-background/95 backdrop-blur-sm border-border/50">
         <CardHeader className="text-center">
