@@ -32,7 +32,8 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
     const storedAdmin = localStorage.getItem('superAdmin');
     if (storedAdmin) {
       try {
-        setSuperAdmin(JSON.parse(storedAdmin));
+        const adminData = JSON.parse(storedAdmin);
+        setSuperAdmin(adminData);
       } catch (error) {
         localStorage.removeItem('superAdmin');
       }

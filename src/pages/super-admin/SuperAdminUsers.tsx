@@ -32,31 +32,24 @@ const SuperAdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      // Get users from auth.users via RPC or direct query
-      // For now, we'll fetch from user_tenants to get organization relationships
-      const { data, error } = await supabase
-        .from('user_tenants')
-        .select(`
-          user_id,
-          role,
-          created_at,
-          tenants (name)
-        `)
-        .order('created_at', { ascending: false });
+      // Get real user data from auth.users via edge function
+      const { data, error } = await supabase.functions.invoke('get-auth-users');
 
       if (error) throw error;
 
-      // Transform data to user format
-      const transformedUsers = data?.map(item => ({
-        id: item.user_id,
-        email: `user@${item.user_id.slice(0, 8)}.com`, // Mock email since we can't access auth.users directly
-        created_at: item.created_at,
-        last_sign_in_at: null, // Would need to be fetched from auth.users
-        tenant_name: item.tenants?.name || 'N/A',
-        role: item.role
-      })) || [];
+      if (data?.users) {
+        const transformedUsers = data.users.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          created_at: user.created_at,
+          last_sign_in_at: user.last_sign_in_at,
+          tenant_name: user.tenant_name,
+          role: user.role,
+          tenant_active: user.tenant_active
+        }));
 
-      setUsers(transformedUsers);
+        setUsers(transformedUsers);
+      }
     } catch (error: any) {
       toast({
         title: "Erro",

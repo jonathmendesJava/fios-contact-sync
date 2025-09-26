@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import CreateOrganizationDialog from '@/components/dialogs/CreateOrganizationDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { 
   Building2, 
   Users, 
@@ -45,6 +47,7 @@ const SuperAdminDashboard = () => {
   });
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -116,6 +119,41 @@ const SuperAdminDashboard = () => {
       toast({
         title: "Sucesso",
         description: `Organização ${!currentStatus ? 'ativada' : 'desativada'} com sucesso`,
+      });
+
+      fetchDashboardData();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteOrganization = async (orgId: string, orgName: string) => {
+    try {
+      const { error } = await supabase
+        .from('tenants')
+        .delete()
+        .eq('id', orgId);
+
+      if (error) throw error;
+
+      // Log the action
+      if (superAdmin) {
+        await supabase.rpc('log_super_admin_action', {
+          _admin_id: superAdmin.id,
+          _action: 'delete_organization',
+          _resource_type: 'organization',
+          _resource_id: orgId,
+          _details: { name: orgName }
+        });
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Organização excluída com sucesso",
       });
 
       fetchDashboardData();
@@ -209,7 +247,10 @@ const SuperAdminDashboard = () => {
                 Gerencie todas as organizações do sistema
               </CardDescription>
             </div>
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Button 
+              onClick={() => setCreateDialogOpen(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Nova Organização
             </Button>
@@ -257,9 +298,33 @@ const SuperAdminDashboard = () => {
                   >
                     <Settings className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-black/90 border-purple-800/50 text-white">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+                        <AlertDialogDescription className="text-purple-200">
+                          Tem certeza que deseja excluir a organização "{org.name}"? 
+                          Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-transparent border-purple-800/50 text-purple-200 hover:bg-purple-800/20">
+                          Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleDeleteOrganization(org.id, org.name)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))}
@@ -271,7 +336,10 @@ const SuperAdminDashboard = () => {
                 <p className="text-purple-200 mb-4">
                   Comece criando sua primeira organização
                 </p>
-                <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Button 
+                  onClick={() => setCreateDialogOpen(true)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Criar Primeira Organização
                 </Button>
@@ -280,7 +348,14 @@ const SuperAdminDashboard = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+
+      {/* Create Organization Dialog */}
+      <CreateOrganizationDialog 
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={fetchDashboardData}
+      />
+    </div>  
   );
 };
 
