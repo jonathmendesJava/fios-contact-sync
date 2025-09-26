@@ -102,12 +102,12 @@ serve(async (req) => {
         }
       );
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Erro ao enviar array para Make.com:', error);
       return new Response(
         JSON.stringify({ 
           success: false,
-          message: `Erro ao enviar array: ${error.message}`,
+          message: `Erro ao enviar array: ${error?.message || 'Unknown error'}`,
           stats: {
             total: contacts.length,
             sent: 0,
@@ -121,12 +121,12 @@ serve(async (req) => {
       );
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Erro na Edge Function:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: `Erro interno: ${error.message}` 
+        error: `Erro interno: ${error?.message || 'Unknown error'}` 
       }),
       { 
         status: 500,

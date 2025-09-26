@@ -34,6 +34,13 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
       try {
         const adminData = JSON.parse(storedAdmin);
         setSuperAdmin(adminData);
+        
+        // Set super admin context for RLS policies
+        supabase.rpc('set_config', {
+          setting_name: 'app.current_super_admin_id',
+          setting_value: adminData.id,
+          is_local: false
+        });
       } catch (error) {
         localStorage.removeItem('superAdmin');
       }
@@ -56,6 +63,13 @@ export function SuperAdminProvider({ children }: { children: React.ReactNode }) 
         const adminData = authResponse.admin;
         setSuperAdmin(adminData);
         localStorage.setItem('superAdmin', JSON.stringify(adminData));
+        
+        // Set super admin context for RLS policies
+        await supabase.rpc('set_config', {
+          setting_name: 'app.current_super_admin_id',
+          setting_value: adminData.id,
+          is_local: false
+        });
         
         // Log the action
         await supabase.rpc('log_super_admin_action', {
