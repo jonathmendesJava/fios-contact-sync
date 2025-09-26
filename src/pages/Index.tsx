@@ -182,6 +182,18 @@ const Index = () => {
           </div>
         </div>
       </div>
+      
+      {/* Super Admin Access Link */}
+      <div className="absolute bottom-4 right-4 z-20">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/super-admin/login")}
+          className="text-muted-foreground/50 hover:text-muted-foreground text-xs opacity-30 hover:opacity-100 transition-all duration-300"
+        >
+          Admin
+        </Button>
+      </div>
     </div>
   );
 };
