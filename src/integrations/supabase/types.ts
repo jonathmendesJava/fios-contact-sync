@@ -310,7 +310,19 @@ export type Database = {
         Args: { _user_id: string }
         Returns: string
       }
+      get_user_tenant_role: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: string
+      }
       has_tenant_access: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_tenant_role: {
+        Args: { _required_role: string; _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_tenant_owner_or_admin: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
