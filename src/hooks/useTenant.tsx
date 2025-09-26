@@ -75,13 +75,13 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const switchTenant = (tenantId: string) => {
+  const switchTenant = useCallback((tenantId: string) => {
     const tenant = userTenants.find(t => t.id === tenantId);
     if (tenant) {
       setCurrentTenant(tenant);
       localStorage.setItem('currentTenantId', tenantId);
     }
-  };
+  }, [userTenants]);
 
   const refreshTenants = async () => {
     setLoading(true);

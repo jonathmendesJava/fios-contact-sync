@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Building, Users, Activity, Eye, Edit, Trash } from 'lucide-react';
-import CreateOrganizationDialog from '@/components/dialogs/CreateOrganizationDialog';
+import { CreateOrganizationDialog } from '@/components/dialogs/CreateOrganizationDialog';
 import { CreateUserDialog } from '@/components/dialogs/CreateUserDialog';  
 import { ViewOrganizationDialog } from '@/components/dialogs/ViewOrganizationDialog';
 import { supabase } from '@/integrations/supabase/client';

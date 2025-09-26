@@ -24,7 +24,7 @@ interface OrganizationForm {
   max_users: number;
 }
 
-const CreateOrganizationDialog = ({ open, onOpenChange, onSuccess }: CreateOrganizationDialogProps) => {
+export function CreateOrganizationDialog({ open, onOpenChange, onSuccess }: CreateOrganizationDialogProps) {
   const { superAdmin } = useSuperAdmin();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<OrganizationForm>({
@@ -196,5 +196,3 @@ const CreateOrganizationDialog = ({ open, onOpenChange, onSuccess }: CreateOrgan
     </Dialog>
   );
 };
-
-export default CreateOrganizationDialog;
