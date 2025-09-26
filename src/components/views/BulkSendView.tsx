@@ -25,7 +25,7 @@ interface Contact {
   name: string;
   email: string | null;
   phone: string;
-  signature: string | null;
+  signature: number;
 }
 
 interface MakeBundle {
@@ -33,7 +33,7 @@ interface MakeBundle {
   name: string;
   email: string | null;
   phone: string;
-  signature: string | null;
+  signature: number;
   group_id: string;
   group_name: string;
   total_contacts: number;

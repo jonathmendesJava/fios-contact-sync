@@ -111,7 +111,7 @@ export const ImportView: React.FC = () => {
           name: values[nameIndex],
           phone: values[phoneIndex],
           email: emailIndex !== -1 ? values[emailIndex] : undefined,
-          signature: signatureIndex !== -1 ? values[signatureIndex] : undefined,
+          signature: 1 // Sempre ativo por padrão
         });
       }
     }

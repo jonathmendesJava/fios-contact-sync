@@ -56,7 +56,6 @@ export const ContactManager = () => {
     name: "",
     phone: "",
     email: "",
-    signature: "",
     group_id: "",
   });
 
@@ -179,7 +178,6 @@ export const ContactManager = () => {
       name: contact.name,
       phone: contact.phone,
       email: contact.email || "",
-      signature: contact.signature || "",
       group_id: contact.group_id,
     });
     setIsDialogOpen(true);
@@ -217,7 +215,6 @@ export const ContactManager = () => {
       name: "",
       phone: "",
       email: "",
-      signature: "",
       group_id: "",
     });
   };
@@ -313,12 +310,6 @@ export const ContactManager = () => {
               <div className="text-sm">
                 <strong>Grupo:</strong> {contact.contact_groups?.name}
               </div>
-              {contact.signature && (
-                <div className="text-sm">
-                  <strong>Assinatura:</strong> 
-                  <p className="text-muted-foreground mt-1 text-xs">{contact.signature}</p>
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}
@@ -419,16 +410,6 @@ export const ContactManager = () => {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signature">Assinatura</Label>
-                <Textarea
-                  id="signature"
-                  placeholder="Assinatura personalizada..."
-                  value={formData.signature}
-                  onChange={(e) => setFormData({...formData, signature: e.target.value})}
-                  rows={3}
-                />
               </div>
             </div>
             <DialogFooter>
