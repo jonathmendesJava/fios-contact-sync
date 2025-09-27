@@ -39,15 +39,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "contact_groups_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       contacts: {
         Row: {
@@ -58,7 +50,6 @@ export type Database = {
           name: string
           phone: string
           signature: number
-          tenant_id: string
           updated_at: string
           user_id: string
         }
@@ -70,7 +61,6 @@ export type Database = {
           name: string
           phone: string
           signature?: number
-          tenant_id: string
           updated_at?: string
           user_id: string
         }
@@ -82,7 +72,6 @@ export type Database = {
           name?: string
           phone?: string
           signature?: number
-          tenant_id?: string
           updated_at?: string
           user_id?: string
         }
@@ -94,72 +83,6 @@ export type Database = {
             referencedRelation: "contact_groups"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "contacts_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      tenants: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          name: string
-          slug: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name: string
-          slug: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          slug?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      user_tenants: {
-        Row: {
-          created_at: string
-          id: string
-          role: string
-          tenant_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role?: string
-          tenant_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: string
-          tenant_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_tenants_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
         ]
       }
     }
@@ -167,13 +90,47 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      authenticate_super_admin: {
+        Args: { _password: string; _username: string }
+        Returns: Json
+      }
       get_user_tenant: {
         Args: { _user_id: string }
+        Returns: string
+      }
+      get_user_tenant_role: {
+        Args: { _tenant_id: string; _user_id: string }
         Returns: string
       }
       has_tenant_access: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      has_tenant_role: {
+        Args: { _required_role: string; _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_tenant_owner_or_admin: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      log_super_admin_action: {
+        Args: {
+          _action: string
+          _admin_id: string
+          _details?: Json
+          _resource_id?: string
+          _resource_type: string
+        }
+        Returns: undefined
+      }
+      set_config: {
+        Args: {
+          is_local?: boolean
+          setting_name: string
+          setting_value: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
