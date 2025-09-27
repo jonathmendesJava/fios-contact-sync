@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/hooks/useTenant';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +44,6 @@ interface ImportResult {
 }
 
 export const GroupsView: React.FC = () => {
-  const { currentTenant } = useTenant();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -165,21 +163,12 @@ export const GroupsView: React.FC = () => {
           description: 'Grupo atualizado com sucesso!',
         });
       } else {
-        if (!currentTenant) {
-          toast({
-            title: 'Erro',
-            description: 'Nenhum tenant selecionado',
-            variant: 'destructive',
-          });
-          return;
-        }
-
         const { error } = await supabase
           .from('contact_groups')
           .insert([{ 
             name: groupName.trim(), 
             user_id: (await supabase.auth.getUser()).data.user!.id,
-            tenant_id: currentTenant.id
+            tenant_id: '00000000-0000-0000-0000-000000000000' // Default value since tenant system was removed
           }]);
 
         if (error) throw error;
@@ -334,15 +323,6 @@ export const GroupsView: React.FC = () => {
     };
 
     try {
-      if (!currentTenant) {
-        toast({
-          title: 'Erro',
-          description: 'Nenhum tenant selecionado',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       const userId = (await supabase.auth.getUser()).data.user!.id;
 
       for (let i = 0; i < csvData.length; i++) {
@@ -355,7 +335,6 @@ export const GroupsView: React.FC = () => {
             .select('id')
             .eq('name', groupName)
             .eq('user_id', userId)
-            .eq('tenant_id', currentTenant.id)
             .maybeSingle();
 
           if (checkError) throw checkError;
@@ -369,7 +348,7 @@ export const GroupsView: React.FC = () => {
               .insert([{
                 name: groupName,
                 user_id: userId,
-                tenant_id: currentTenant.id
+                tenant_id: '00000000-0000-0000-0000-000000000000' // Default value since tenant system was removed
               }]);
 
             if (insertError) throw insertError;
