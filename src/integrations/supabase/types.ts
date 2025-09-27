@@ -19,7 +19,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -27,7 +27,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
-          tenant_id: string
+          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -35,7 +35,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -50,6 +50,7 @@ export type Database = {
           name: string
           phone: string
           signature: number
+          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -61,6 +62,7 @@ export type Database = {
           name: string
           phone: string
           signature?: number
+          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -72,6 +74,7 @@ export type Database = {
           name?: string
           phone?: string
           signature?: number
+          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }

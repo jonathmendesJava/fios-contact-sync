@@ -32,8 +32,6 @@ import { GroupsView } from '@/components/views/GroupsView';
 import { ImportView } from '@/components/views/ImportView';
 import { AnalyticsView } from '@/components/views/AnalyticsView';
 import { BulkSendView } from '@/components/views/BulkSendView';
-import { TenantSelector } from '@/components/TenantSelector';
-import { CreateTenantDialog } from '@/components/dialogs/CreateTenantDialog';
 
 // Navigation items configuration
 const navigationItems = [
@@ -273,8 +271,7 @@ const DashboardLayout = () => {
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <TenantSelector />
-              <CreateTenantDialog />
+              {/* Removed tenant components */}
             </div>
           </header>
 

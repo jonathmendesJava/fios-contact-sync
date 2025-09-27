@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTenant } from '@/hooks/useTenant';
+// Removed tenant dependency
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,7 +41,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
   groupName,
   onContactAdded,
 }) => {
-  const { currentTenant } = useTenant();
+  // Removed tenant dependency
   const [activeTab, setActiveTab] = useState('manual');
   const [loading, setLoading] = useState(false);
   
@@ -92,15 +92,6 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
 
     setLoading(true);
     try {
-      if (!currentTenant) {
-        toast({
-          title: 'Erro',
-          description: 'Nenhum tenant selecionado',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       const userId = (await supabase.auth.getUser()).data.user!.id;
       
       const contactData = {
@@ -109,8 +100,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
         email: formData.email.trim() || null,
         signature: 1, // Sempre ativo por padrão
         group_id: groupId,
-        user_id: userId,
-        tenant_id: currentTenant.id
+        user_id: userId
       };
 
       const { error } = await supabase
@@ -233,15 +223,6 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
     };
 
     try {
-      if (!currentTenant) {
-        toast({
-          title: 'Erro',
-          description: 'Nenhum tenant selecionado',
-          variant: 'destructive',
-        });
-        return;
-      }
-
       const userId = (await supabase.auth.getUser()).data.user!.id;
 
       for (let i = 0; i < csvData.length; i++) {
@@ -262,7 +243,6 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
             .select('id')
             .eq('phone', contact.phone)
             .eq('group_id', groupId)
-            .eq('tenant_id', currentTenant.id)
             .maybeSingle();
 
           if (checkError) throw checkError;
@@ -279,8 +259,7 @@ export const AddContactToGroupDialog: React.FC<AddContactToGroupDialogProps> = (
                 email: contact.email || null,
                 signature: 1, // Sempre ativo por padrão
                 group_id: groupId,
-                user_id: userId,
-                tenant_id: currentTenant.id
+                user_id: userId
               }]);
 
             if (insertError) throw insertError;

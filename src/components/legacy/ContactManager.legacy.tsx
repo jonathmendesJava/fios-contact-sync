@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
+// Removed tenant dependency
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +43,7 @@ interface Group {
 }
 
 export const ContactManager = () => {
-  const { currentTenant } = useTenant();
+  // Removed tenant dependency
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
@@ -127,15 +127,6 @@ export const ContactManager = () => {
     if (!formData.name.trim() || !formData.phone.trim() || !formData.group_id) return;
 
     try {
-      if (!currentTenant) {
-        toast({
-          title: "Erro",
-          description: "Nenhum tenant selecionado",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const contactData = {
         name: formData.name.trim(),
         phone: formData.phone.trim(),
@@ -143,7 +134,6 @@ export const ContactManager = () => {
         signature: 1, // Sempre ativo por padrão
         group_id: formData.group_id,
         user_id: (await supabase.auth.getUser()).data.user!.id,
-        tenant_id: currentTenant.id,
       };
 
       if (editingContact) {

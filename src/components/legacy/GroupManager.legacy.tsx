@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "@/hooks/useTenant";
+// Removed tenant dependency
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +23,7 @@ interface Group {
 }
 
 export const GroupManager = () => {
-  const { currentTenant } = useTenant();
+  // Removed tenant dependency
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -81,21 +81,11 @@ export const GroupManager = () => {
           description: "Grupo atualizado com sucesso!",
         });
       } else {
-        if (!currentTenant) {
-          toast({
-            title: "Erro",
-            description: "Nenhum tenant selecionado",
-            variant: "destructive",
-          });
-          return;
-        }
-
         const { error } = await supabase
           .from("contact_groups")
           .insert([{ 
             name: groupName.trim(), 
-            user_id: (await supabase.auth.getUser()).data.user!.id,
-            tenant_id: currentTenant.id
+            user_id: (await supabase.auth.getUser()).data.user!.id
           }]);
 
         if (error) throw error;
