@@ -54,11 +54,11 @@ Deno.serve(async (req) => {
       throw new Error('META_APP_ID or META_APP_SECRET not configured');
     }
 
-    const redirectUri = `${url.origin}/meta/callback`;
+    const redirectUri = `${url.origin}/functions/v1/meta-oauth-callback`;
 
     // Step 1: Exchange code for short-lived token
     console.log('Exchanging code for access token...');
-    const tokenUrl = `https://graph.facebook.com/v18.0/oauth/access_token?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${metaAppSecret}&code=${code}`;
+    const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${metaAppSecret}&code=${code}`;
     
     const tokenResponse = await fetch(tokenUrl);
     const tokenData: OAuthResponse = await tokenResponse.json();
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
     // Step 2: Convert to long-lived token (60 days)
     console.log('Converting to long-lived token...');
-    const longLivedUrl = `https://graph.facebook.com/v18.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${metaAppId}&client_secret=${metaAppSecret}&fb_exchange_token=${tokenData.access_token}`;
+    const longLivedUrl = `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${metaAppId}&client_secret=${metaAppSecret}&fb_exchange_token=${tokenData.access_token}`;
     
     const longLivedResponse = await fetch(longLivedUrl);
     const longLivedData: LongLivedTokenResponse = await longLivedResponse.json();
