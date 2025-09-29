@@ -88,6 +88,154 @@ export type Database = {
           },
         ]
       }
+      meta_connections: {
+        Row: {
+          access_token: string
+          business_id: string
+          business_name: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          phone_number: string | null
+          phone_number_id: string
+          token_expires_at: string | null
+          token_type: string | null
+          updated_at: string
+          user_id: string
+          waba_id: string
+          waba_name: string | null
+        }
+        Insert: {
+          access_token: string
+          business_id: string
+          business_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          phone_number?: string | null
+          phone_number_id: string
+          token_expires_at?: string | null
+          token_type?: string | null
+          updated_at?: string
+          user_id: string
+          waba_id: string
+          waba_name?: string | null
+        }
+        Update: {
+          access_token?: string
+          business_id?: string
+          business_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          phone_number?: string | null
+          phone_number_id?: string
+          token_expires_at?: string | null
+          token_type?: string | null
+          updated_at?: string
+          user_id?: string
+          waba_id?: string
+          waba_name?: string | null
+        }
+        Relationships: []
+      }
+      template_test_logs: {
+        Row: {
+          error_message: string | null
+          id: string
+          phone_number: string
+          sent_at: string
+          status: string
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          phone_number: string
+          sent_at?: string
+          status: string
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          phone_number?: string
+          sent_at?: string
+          status?: string
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_test_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          category: string | null
+          components: Json | null
+          connection_id: string
+          created_at: string
+          id: string
+          language: string
+          name: string
+          quality_score: string | null
+          rejected_reason: string | null
+          status: string | null
+          synced_at: string | null
+          template_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          components?: Json | null
+          connection_id: string
+          created_at?: string
+          id?: string
+          language: string
+          name: string
+          quality_score?: string | null
+          rejected_reason?: string | null
+          status?: string | null
+          synced_at?: string | null
+          template_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          components?: Json | null
+          connection_id?: string
+          created_at?: string
+          id?: string
+          language?: string
+          name?: string
+          quality_score?: string | null
+          rejected_reason?: string | null
+          status?: string | null
+          synced_at?: string | null
+          template_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "meta_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

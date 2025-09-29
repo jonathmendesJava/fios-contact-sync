@@ -2,3 +2,15 @@ project_id = "kdwxmroxfbhmwxkyniph"
 
 [functions.send-to-make]
 verify_jwt = false
+
+[functions.meta-oauth-callback]
+verify_jwt = false
+
+[functions.meta-api]
+verify_jwt = true
+
+[functions.meta-webhook]
+verify_jwt = false
+
+[functions.meta-token-refresh]
+verify_jwt = false
