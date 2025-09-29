@@ -56,15 +56,28 @@ Deno.serve(async (req) => {
 
     const redirectUri = `${url.origin}/functions/v1/meta-oauth-callback`;
 
+    console.log('DEBUG - URL Origin:', url.origin);
+    console.log('DEBUG - Redirect URI construído:', redirectUri);
+    console.log('DEBUG - Meta App ID:', metaAppId);
+
     // Step 1: Exchange code for short-lived token
     console.log('Exchanging code for access token...');
     const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${metaAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${metaAppSecret}&code=${code}`;
+    
+    console.log('DEBUG - Token URL completa:', tokenUrl);
+    console.log('DEBUG - Redirect URI encoded:', encodeURIComponent(redirectUri));
     
     const tokenResponse = await fetch(tokenUrl);
     const tokenData: OAuthResponse = await tokenResponse.json();
 
     if (!tokenResponse.ok || !tokenData.access_token) {
-      console.error('Failed to get access token:', tokenData);
+      console.error('Failed to get access token:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        data: tokenData,
+        redirectUriUsed: redirectUri,
+        encodedRedirectUri: encodeURIComponent(redirectUri)
+      });
       throw new Error('Failed to exchange code for token');
     }
 
