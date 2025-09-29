@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       throw new Error('META_APP_ID or META_APP_SECRET not configured');
     }
 
-    const redirectUri = `${url.origin}/functions/v1/meta-oauth-callback`;
+    const redirectUri = `https://kdwxmroxfbhmwxkyniph.supabase.co/functions/v1/meta-oauth-callback`;
 
     console.log('DEBUG - URL Origin:', url.origin);
     console.log('DEBUG - Redirect URI construído:', redirectUri);
