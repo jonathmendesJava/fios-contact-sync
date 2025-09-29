@@ -1,7 +1,7 @@
 project_id = "kdwxmroxfbhmwxkyniph"
 
 [functions.send-to-make]
-verify_jwt = false
+verify_jwt = true
 
 [functions.meta-oauth-callback]
 verify_jwt = false
@@ -13,4 +13,4 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.meta-token-refresh]
-verify_jwt = false
+verify_jwt = true

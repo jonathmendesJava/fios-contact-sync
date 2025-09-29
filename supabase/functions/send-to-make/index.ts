@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +26,33 @@ serve(async (req) => {
 
   try {
     console.log('=== Edge Function send-to-make iniciada ===');
+    
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get user from JWT
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      console.error('Authentication failed:', userError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated user:', user.id);
     
     const { webhookUrl, contacts } = await req.json();
     
@@ -56,6 +84,42 @@ serve(async (req) => {
         }),
         { 
           status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Verify user owns all contacts
+    const contactIds = contacts.map((c: ContactPayload) => c.contact_id);
+    const { data: userContacts, error: contactsError } = await supabase
+      .from('contacts')
+      .select('id')
+      .eq('user_id', user.id)
+      .in('id', contactIds);
+
+    if (contactsError) {
+      console.error('Error verifying contact ownership:', contactsError);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Erro ao verificar permissões dos contatos' 
+        }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    if (!userContacts || userContacts.length !== contactIds.length) {
+      console.error(`User ${user.id} doesn't own all contacts. Expected: ${contactIds.length}, Found: ${userContacts?.length || 0}`);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Você não tem permissão para enviar alguns desses contatos' 
+        }),
+        { 
+          status: 403,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );

@@ -19,8 +19,33 @@ Deno.serve(async (req) => {
   try {
     console.log('Starting token refresh process...');
 
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get user from JWT
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      console.error('Authentication failed:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Authenticated user:', user.id);
+
     const metaAppId = Deno.env.get('META_APP_ID');
     const metaAppSecret = Deno.env.get('META_APP_SECRET');
 
@@ -28,15 +53,14 @@ Deno.serve(async (req) => {
       throw new Error('META_APP_ID or META_APP_SECRET not configured');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Find tokens expiring in the next 7 days
+    // Find user's tokens expiring in the next 7 days
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
     const { data: connections, error: fetchError } = await supabase
       .from('meta_connections')
       .select('*')
+      .eq('user_id', user.id)
       .eq('is_active', true)
       .lt('token_expires_at', sevenDaysFromNow.toISOString());
 
