@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { MetaConnection } from '@/hooks/useMetaConnection';
 
 interface TestTemplateDialogProps {
   open: boolean;
@@ -18,14 +19,17 @@ interface TestTemplateDialogProps {
   template: {
     id: string;
     name: string;
+    language: string;
     components: any;
   };
+  connection: MetaConnection;
 }
 
 export const TestTemplateDialog: React.FC<TestTemplateDialogProps> = ({
   open,
   onOpenChange,
   template,
+  connection,
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -52,7 +56,7 @@ export const TestTemplateDialog: React.FC<TestTemplateDialogProps> = ({
       );
 
       const response = await fetch(
-        'https://kdwxmroxfbhmwxkyniph.supabase.co/functions/v1/meta-api/send-test',
+        `https://kdwxmroxfbhmwxkyniph.supabase.co/functions/v1/meta-api/send-test/${connection.phone_number_id}`,
         {
           method: 'POST',
           headers: {
@@ -60,9 +64,16 @@ export const TestTemplateDialog: React.FC<TestTemplateDialogProps> = ({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            to: phoneNumber,
             template_name: template.name,
-            phone_number: phoneNumber,
-            variables: variableValues,
+            language: template.language,
+            components: variableCount > 0 ? [{
+              type: 'body',
+              parameters: variableValues.map(v => ({
+                type: 'text',
+                text: v
+              }))
+            }] : [],
           }),
         }
       );

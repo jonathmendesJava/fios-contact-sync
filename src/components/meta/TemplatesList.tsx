@@ -69,7 +69,7 @@ export const TemplatesList: React.FC<TemplatesListProps> = ({ connection }) => {
       if (!session) throw new Error('Not authenticated');
 
       const response = await fetch(
-        'https://kdwxmroxfbhmwxkyniph.supabase.co/functions/v1/meta-api/templates',
+        `https://kdwxmroxfbhmwxkyniph.supabase.co/functions/v1/meta-api/templates/${connection.waba_id}`,
         {
           method: 'GET',
           headers: {
@@ -100,6 +100,29 @@ export const TemplatesList: React.FC<TemplatesListProps> = ({ connection }) => {
 
   const handleDelete = async (templateId: string) => {
     try {
+      const template = templates.find(t => t.id === templateId);
+      if (!template) throw new Error('Template not found');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      // 1. Delete from Meta API first
+      const response = await fetch(
+        `https://kdwxmroxfbhmwxkyniph.supabase.co/functions/v1/meta-api/templates/${connection.waba_id}/${template.name}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to delete from Meta');
+      }
+
+      // 2. Delete from local database
       const { error } = await supabase
         .from('whatsapp_templates')
         .delete()
@@ -113,11 +136,11 @@ export const TemplatesList: React.FC<TemplatesListProps> = ({ connection }) => {
       });
 
       await fetchTemplates();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting template:', error);
       toast({
         title: 'Erro',
-        description: 'Não foi possível excluir o template.',
+        description: error.message || 'Não foi possível excluir o template.',
         variant: 'destructive',
       });
     }
@@ -242,6 +265,7 @@ export const TemplatesList: React.FC<TemplatesListProps> = ({ connection }) => {
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         onSuccess={fetchTemplates}
+        connection={connection}
       />
 
       {selectedTemplate && (
@@ -249,6 +273,7 @@ export const TemplatesList: React.FC<TemplatesListProps> = ({ connection }) => {
           open={testDialogOpen}
           onOpenChange={setTestDialogOpen}
           template={selectedTemplate}
+          connection={connection}
         />
       )}
     </>

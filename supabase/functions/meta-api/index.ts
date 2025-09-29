@@ -145,14 +145,14 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         } else if (req.method === 'DELETE') {
-          // DELETE /{template_id}
-          const templateId = segments[1];
-          if (!templateId) {
-            throw new Error('Template ID required');
+          // DELETE /{waba_id}/{template_name}
+          const templateName = segments[2];
+          if (!wabaId || !templateName) {
+            throw new Error('WABA ID and template name required');
           }
 
           const response = await fetch(
-            `https://graph.facebook.com/v18.0/${templateId}?access_token=${accessToken}`,
+            `https://graph.facebook.com/v18.0/${wabaId}/message_templates?name=${templateName}&access_token=${accessToken}`,
             { method: 'DELETE' }
           );
           const data = await response.json();

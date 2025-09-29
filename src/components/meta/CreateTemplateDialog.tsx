@@ -19,17 +19,20 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { MetaConnection } from '@/hooks/useMetaConnection';
 
 interface CreateTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  connection: MetaConnection;
 }
 
 export const CreateTemplateDialog: React.FC<CreateTemplateDialogProps> = ({
   open,
   onOpenChange,
   onSuccess,
+  connection,
 }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -56,7 +59,7 @@ export const CreateTemplateDialog: React.FC<CreateTemplateDialogProps> = ({
       ];
 
       const response = await fetch(
-        'https://kdwxmroxfbhmwxkyniph.supabase.co/functions/v1/meta-api/templates',
+        `https://kdwxmroxfbhmwxkyniph.supabase.co/functions/v1/meta-api/templates/${connection.waba_id}`,
         {
           method: 'POST',
           headers: {
