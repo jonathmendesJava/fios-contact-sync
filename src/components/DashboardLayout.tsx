@@ -6,7 +6,8 @@ import {
   LogOut, 
   BarChart3,
   Menu,
-  Send
+  Send,
+  FileText
 } from 'lucide-react';
 import Particles from "react-tsparticles";
 import { loadSlim } from "tsparticles-slim";
@@ -32,6 +33,7 @@ import { GroupsView } from '@/components/views/GroupsView';
 import { ImportView } from '@/components/views/ImportView';
 import { AnalyticsView } from '@/components/views/AnalyticsView';
 import { BulkSendView } from '@/components/views/BulkSendView';
+import { TemplatesView } from '@/components/views/TemplatesView';
 
 // Navigation items configuration
 const navigationItems = [
@@ -52,6 +54,12 @@ const navigationItems = [
     label: 'Importar CSV',
     icon: Upload,
     description: 'Importar contatos'
+  },
+  {
+    id: 'templates',
+    label: 'Templates',
+    icon: FileText,
+    description: 'Gerenciar templates do WhatsApp'
   },
   {
     id: 'analytics',
@@ -162,6 +170,8 @@ const DashboardLayout = () => {
         return <GroupsView />;
       case 'import':
         return <ImportView />;
+      case 'templates':
+        return <TemplatesView />;
       case 'analytics':
         return <AnalyticsView />;
       case 'bulk-send':
