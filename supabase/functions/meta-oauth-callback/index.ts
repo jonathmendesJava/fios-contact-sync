@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
     console.log('Connection saved successfully');
 
     // Redirect back to dashboard with success
-    const redirectUrl = new URL('/dashboard', url.origin);
+    const redirectUrl = new URL('/dashboard', 'https://notify.fios.com.br');
     redirectUrl.searchParams.set('tab', 'templates');
     redirectUrl.searchParams.set('oauth', 'success');
     
