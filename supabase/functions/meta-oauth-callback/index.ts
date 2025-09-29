@@ -17,6 +17,22 @@ interface LongLivedTokenResponse {
   expires_in: number;
 }
 
+interface MetaBusiness {
+  id: string;
+  name: string;
+}
+
+interface MetaWABA {
+  id: string;
+  name: string;
+}
+
+interface MetaPhoneNumber {
+  id: string;
+  display_phone_number: string;
+  verified_name: string;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -100,21 +116,69 @@ Deno.serve(async (req) => {
     const accessToken = longLivedData.access_token;
     const expiresAt = new Date(Date.now() + (longLivedData.expires_in * 1000));
 
-    // Step 3: Save initial connection (without business details yet)
+    // Step 3: Fetch Meta resources automatically
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Create a temporary connection record
+    console.log('Step 3: Fetching user businesses from Meta...');
+    const businessesResponse = await fetch(
+      `https://graph.facebook.com/v21.0/me/businesses?access_token=${accessToken}`
+    );
+    const businessesData = await businessesResponse.json();
+
+    if (!businessesResponse.ok || !businessesData.data || businessesData.data.length === 0) {
+      console.error('No businesses found:', businessesData);
+      throw new Error('No Meta businesses found for this account. Please ensure your Meta Business account is properly configured.');
+    }
+
+    const firstBusiness: MetaBusiness = businessesData.data[0];
+    console.log('Found business:', firstBusiness.id, firstBusiness.name);
+
+    // Step 3B: Fetch WABAs for the business
+    console.log('Fetching WhatsApp Business Accounts...');
+    const wabasResponse = await fetch(
+      `https://graph.facebook.com/v21.0/${firstBusiness.id}/owned_whatsapp_business_accounts?access_token=${accessToken}`
+    );
+    const wabasData = await wabasResponse.json();
+
+    if (!wabasResponse.ok || !wabasData.data || wabasData.data.length === 0) {
+      console.error('No WABAs found:', wabasData);
+      throw new Error('No WhatsApp Business Accounts found. Please connect a WhatsApp Business Account to your Meta Business.');
+    }
+
+    const firstWaba: MetaWABA = wabasData.data[0];
+    console.log('Found WABA:', firstWaba.id, firstWaba.name);
+
+    // Step 3C: Fetch phone numbers for the WABA
+    console.log('Fetching phone numbers...');
+    const phonesResponse = await fetch(
+      `https://graph.facebook.com/v21.0/${firstWaba.id}/phone_numbers?access_token=${accessToken}`
+    );
+    const phonesData = await phonesResponse.json();
+
+    if (!phonesResponse.ok || !phonesData.data || phonesData.data.length === 0) {
+      console.error('No phone numbers found:', phonesData);
+      throw new Error('No phone numbers found for this WhatsApp Business Account. Please add a phone number in Meta Business Manager.');
+    }
+
+    const firstPhone: MetaPhoneNumber = phonesData.data[0];
+    console.log('Found phone number:', firstPhone.id, firstPhone.display_phone_number);
+
+    // Step 3D: Save connection with real IDs and activate it
+    console.log('Saving connection to database...');
     const { error: insertError } = await supabase
       .from('meta_connections')
       .upsert({
         user_id: state,
-        business_id: 'pending',
-        waba_id: 'pending',
-        phone_number_id: 'pending',
+        business_id: firstBusiness.id,
+        business_name: firstBusiness.name,
+        waba_id: firstWaba.id,
+        waba_name: firstWaba.name || 'WhatsApp Business Account',
+        phone_number_id: firstPhone.id,
+        phone_number: firstPhone.display_phone_number,
         access_token: accessToken,
         token_type: 'long_lived',
         token_expires_at: expiresAt.toISOString(),
-        is_active: false, // Will be activated when user selects resources
+        is_active: true,
       }, {
         onConflict: 'user_id,waba_id,phone_number_id'
       });
@@ -124,7 +188,12 @@ Deno.serve(async (req) => {
       throw new Error('Failed to save connection to database');
     }
 
-    console.log('Connection saved successfully');
+    console.log('✅ Connection saved successfully and activated!');
+    console.log('Connection details:', {
+      business: firstBusiness.name,
+      waba: firstWaba.name,
+      phone: firstPhone.display_phone_number
+    });
 
     // Redirect back to dashboard with success
     const redirectUrl = new URL('/dashboard', 'https://notify.fios.com.br');
