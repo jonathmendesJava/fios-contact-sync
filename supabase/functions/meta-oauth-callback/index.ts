@@ -140,9 +140,26 @@ Deno.serve(async (req) => {
     );
     const wabasData = await wabasResponse.json();
 
+    // Check for permission errors
+    if (wabasData.error) {
+      console.error('Meta API Error:', wabasData.error);
+      
+      if (wabasData.error.code === 200 || wabasData.error.message?.includes('business_management')) {
+        throw new Error(
+          'Permissões insuficientes. Por favor, ao conectar sua conta Meta, certifique-se de conceder as seguintes permissões:\n' +
+          '- business_management (Gerenciar negócios)\n' +
+          '- whatsapp_business_management (Gerenciar WhatsApp Business)\n' +
+          '- whatsapp_business_messaging (Enviar mensagens)\n\n' +
+          'Desconecte e reconecte sua conta para atualizar as permissões.'
+        );
+      }
+      
+      throw new Error(`Erro ao buscar WhatsApp Business Accounts: ${wabasData.error.message}`);
+    }
+
     if (!wabasResponse.ok || !wabasData.data || wabasData.data.length === 0) {
       console.error('No WABAs found:', wabasData);
-      throw new Error('No WhatsApp Business Accounts found. Please connect a WhatsApp Business Account to your Meta Business.');
+      throw new Error('Nenhuma conta WhatsApp Business encontrada. Por favor, conecte uma conta WhatsApp Business ao seu Meta Business.');
     }
 
     const firstWaba: MetaWABA = wabasData.data[0];
