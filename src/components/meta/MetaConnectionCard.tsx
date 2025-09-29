@@ -6,6 +6,7 @@ import { LinkIcon, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
 import { MetaConnection } from '@/hooks/useMetaConnection';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MetaConnectionCardProps {
   connection: MetaConnection | null;
@@ -17,14 +18,25 @@ export const MetaConnectionCard: React.FC<MetaConnectionCardProps> = ({
   onConnectionUpdate,
 }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleConnect = () => {
-    const clientId = 'YOUR_META_APP_ID'; // This should come from env or config
-    const redirectUri = `${window.location.origin}/meta/callback`;
+    if (!user) {
+      toast({
+        title: 'Erro',
+        description: 'Você precisa estar autenticado para conectar ao Meta.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const clientId = '1123306973217251';
+    const redirectUri = 'https://kdwxmroxfbhmwxkyniph.supabase.co/functions/v1/meta-oauth-callback';
     const scope = 'business_management,whatsapp_business_management,whatsapp_business_messaging';
+    const state = user.id;
     
-    const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code`;
+    const authUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code&state=${state}`;
     
     window.location.href = authUrl;
   };
