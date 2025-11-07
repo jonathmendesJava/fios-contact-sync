@@ -19,7 +19,6 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -27,7 +26,6 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
-          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -35,7 +33,6 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -50,7 +47,6 @@ export type Database = {
           name: string
           phone: string
           signature: number
-          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -62,7 +58,6 @@ export type Database = {
           name: string
           phone: string
           signature?: number
-          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -74,7 +69,6 @@ export type Database = {
           name?: string
           phone?: string
           signature?: number
-          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -245,10 +239,7 @@ export type Database = {
         Args: { _password: string; _username: string }
         Returns: Json
       }
-      get_user_tenant: {
-        Args: { _user_id: string }
-        Returns: string
-      }
+      get_user_tenant: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_role: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: string
