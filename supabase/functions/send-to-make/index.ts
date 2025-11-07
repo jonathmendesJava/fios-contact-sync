@@ -89,40 +89,47 @@ serve(async (req) => {
       );
     }
 
-    // Verify user owns all contacts
-    const contactIds = contacts.map((c: ContactPayload) => c.contact_id);
-    const { data: userContacts, error: contactsError } = await supabase
-      .from('contacts')
-      .select('id')
-      .eq('user_id', user.id)
-      .in('id', contactIds);
+    // Detectar se é um teste de webhook
+    const isTest = contacts.length === 1 && contacts[0].test === true;
+    
+    // Só verificar propriedade dos contatos se NÃO for um teste
+    if (!isTest) {
+      const contactIds = contacts.map((c: ContactPayload) => c.contact_id);
+      const { data: userContacts, error: contactsError } = await supabase
+        .from('contacts')
+        .select('id')
+        .eq('user_id', user.id)
+        .in('id', contactIds);
 
-    if (contactsError) {
-      console.error('Error verifying contact ownership:', contactsError);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Erro ao verificar permissões dos contatos' 
-        }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+      if (contactsError) {
+        console.error('Error verifying contact ownership:', contactsError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Erro ao verificar permissões dos contatos' 
+          }),
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
 
-    if (!userContacts || userContacts.length !== contactIds.length) {
-      console.error(`User ${user.id} doesn't own all contacts. Expected: ${contactIds.length}, Found: ${userContacts?.length || 0}`);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'Você não tem permissão para enviar alguns desses contatos' 
-        }),
-        { 
-          status: 403,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      if (!userContacts || userContacts.length !== contactIds.length) {
+        console.error(`User ${user.id} doesn't own all contacts. Expected: ${contactIds.length}, Found: ${userContacts?.length || 0}`);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Você não tem permissão para enviar alguns desses contatos' 
+          }),
+          { 
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+    } else {
+      console.log('🧪 Teste de webhook detectado - pulando verificação de propriedade');
     }
 
     console.log('=== ENVIANDO ARRAY COMPLETO PARA MAKE.COM ===');
