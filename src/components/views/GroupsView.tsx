@@ -167,8 +167,7 @@ export const GroupsView: React.FC = () => {
           .from('contact_groups')
           .insert([{ 
             name: groupName.trim(), 
-            user_id: (await supabase.auth.getUser()).data.user!.id,
-            tenant_id: '00000000-0000-0000-0000-000000000000' // Default value since tenant system was removed
+            user_id: (await supabase.auth.getUser()).data.user!.id
           }]);
 
         if (error) throw error;
@@ -347,8 +346,7 @@ export const GroupsView: React.FC = () => {
               .from('contact_groups')
               .insert([{
                 name: groupName,
-                user_id: userId,
-                tenant_id: '00000000-0000-0000-0000-000000000000' // Default value since tenant system was removed
+                user_id: userId
               }]);
 
             if (insertError) throw insertError;
