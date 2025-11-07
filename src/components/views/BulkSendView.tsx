@@ -284,8 +284,8 @@ export const BulkSendView = () => {
         addDebugLog(`Payload completo: ${JSON.stringify(makeArray, null, 2)}`);
       }
 
-      // Enviar via Edge Function com fan-out
-      addDebugLog("Enviando via Supabase Edge Function (fan-out)...");
+      // Enviar via Edge Function (array completo)
+      addDebugLog("Enviando via Supabase Edge Function (array completo)...");
       
       const startTime = Date.now();
       
@@ -489,7 +489,7 @@ export const BulkSendView = () => {
                     className="w-full"
                     size="lg"
                   >
-                    {isSending ? 'Enviando...' : `Enviar ${contacts.length} Contatos (Fan-out)`}
+                    {isSending ? 'Enviando...' : `Enviar ${contacts.length} Contatos`}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -499,9 +499,9 @@ export const BulkSendView = () => {
                       Você está prestes a enviar o grupo <strong>"{selectedGroup?.name}"</strong> com{' '}
                       <strong>{contacts.length} contatos</strong> para Make.com.
                       <br /><br />
-                      <strong>Fan-out ativo:</strong> Cada contato será enviado individualmente, criando {contacts.length} bundles separados no Make.com. Isso garante que cada contato seja processado independentemente no seu workflow.
+                      O array completo com todos os contatos será enviado em <strong>uma única requisição</strong> para o webhook do Make.com. Configure um módulo Iterator no seu cenário do Make.com para processar cada contato individualmente.
                       <br /><br />
-                      Esta ação irá fazer <strong>{contacts.length} requisições sequenciais</strong> para o webhook do Make.com, com rate limiting para evitar sobrecarga. Tem certeza?
+                      Tem certeza que deseja enviar?
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
