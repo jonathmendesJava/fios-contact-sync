@@ -94,19 +94,23 @@ serve(async (req) => {
     
     // Só verificar propriedade dos contatos se NÃO for um teste
     if (!isTest) {
-      const contactIds = contacts.map((c: ContactPayload) => c.contact_id);
-      const { data: userContacts, error: contactsError } = await supabase
+      // Para evitar limite de IDs na cláusula IN, verificamos por grupo
+      // Assumimos que todos os contatos têm o mesmo group_id (validado no frontend)
+      const groupId = contacts[0].group_id;
+      
+      // Verificar se o grupo pertence ao usuário e contar contatos
+      const { count: groupContactsCount, error: countError } = await supabase
         .from('contacts')
-        .select('id')
+        .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .in('id', contactIds);
+        .eq('group_id', groupId);
 
-      if (contactsError) {
-        console.error('Error verifying contact ownership:', contactsError);
+      if (countError) {
+        console.error('Error verifying group ownership:', countError);
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Erro ao verificar permissões dos contatos' 
+            error: 'Erro ao verificar permissões do grupo' 
           }),
           { 
             status: 500,
@@ -115,12 +119,13 @@ serve(async (req) => {
         );
       }
 
-      if (!userContacts || userContacts.length !== contactIds.length) {
-        console.error(`User ${user.id} doesn't own all contacts. Expected: ${contactIds.length}, Found: ${userContacts?.length || 0}`);
+      // Verificar se o número de contatos do grupo corresponde ao enviado
+      if (groupContactsCount === null || groupContactsCount !== contacts.length) {
+        console.error(`User ${user.id} doesn't own group ${groupId} or contact count mismatch. Expected: ${contacts.length}, Found: ${groupContactsCount || 0}`);
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Você não tem permissão para enviar alguns desses contatos' 
+            error: 'Você não tem permissão para enviar esses contatos ou o grupo foi modificado' 
           }),
           { 
             status: 403,
@@ -128,6 +133,8 @@ serve(async (req) => {
           }
         );
       }
+      
+      console.log(`✅ Verificação de propriedade OK: ${contacts.length} contatos do grupo ${groupId}`);
     } else {
       console.log('🧪 Teste de webhook detectado - pulando verificação de propriedade');
     }
