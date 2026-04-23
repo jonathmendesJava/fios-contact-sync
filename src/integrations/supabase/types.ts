@@ -14,7 +14,181 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contact_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          group_id: string | null
+          id: string
+          name: string
+          phone: string
+          signature: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          group_id?: string | null
+          id?: string
+          name: string
+          phone: string
+          signature?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          group_id?: string | null
+          id?: string
+          name?: string
+          phone?: string
+          signature?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "contact_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meta_connections: {
+        Row: {
+          access_token: string
+          business_id: string
+          business_name: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          phone_number: string | null
+          phone_number_id: string
+          token_expires_at: string | null
+          token_type: string | null
+          updated_at: string
+          user_id: string
+          waba_id: string
+          waba_name: string | null
+        }
+        Insert: {
+          access_token: string
+          business_id: string
+          business_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          phone_number?: string | null
+          phone_number_id: string
+          token_expires_at?: string | null
+          token_type?: string | null
+          updated_at?: string
+          user_id: string
+          waba_id: string
+          waba_name?: string | null
+        }
+        Update: {
+          access_token?: string
+          business_id?: string
+          business_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          phone_number?: string | null
+          phone_number_id?: string
+          token_expires_at?: string | null
+          token_type?: string | null
+          updated_at?: string
+          user_id?: string
+          waba_id?: string
+          waba_name?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_templates: {
+        Row: {
+          category: string | null
+          components: Json | null
+          connection_id: string
+          created_at: string
+          id: string
+          language: string
+          name: string
+          quality_score: string | null
+          rejected_reason: string | null
+          status: string | null
+          synced_at: string | null
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          components?: Json | null
+          connection_id: string
+          created_at?: string
+          id?: string
+          language: string
+          name: string
+          quality_score?: string | null
+          rejected_reason?: string | null
+          status?: string | null
+          synced_at?: string | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          components?: Json | null
+          connection_id?: string
+          created_at?: string
+          id?: string
+          language?: string
+          name?: string
+          quality_score?: string | null
+          rejected_reason?: string | null
+          status?: string | null
+          synced_at?: string | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "meta_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
