@@ -74,15 +74,20 @@ serve(async (req) => {
       );
     }
 
-    // Validar se é URL do Make.com
-    if (!webhookUrl.includes('hook.us1.make.com') && !webhookUrl.includes('hook.eu1.make.com')) {
-      console.error('URL não é do Make.com:', webhookUrl);
+    // Validar se é uma URL http(s) válida (qualquer domínio)
+    try {
+      const parsed = new URL(webhookUrl);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        throw new Error('protocolo inválido');
+      }
+    } catch {
+      console.error('URL inválida:', webhookUrl);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'URL deve ser um webhook do Make.com' 
+        JSON.stringify({
+          success: false,
+          error: 'webhookUrl deve ser uma URL http(s) válida'
         }),
-        { 
+        {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
