@@ -301,7 +301,7 @@ export const ImportView: React.FC = () => {
   };
 
   const downloadTemplate = () => {
-    const template = 'nome,telefone,email,assinatura\nJoão Silva,11987654321,joao@email.com,sim\nMaria Santos,(21) 98765-4321,maria@email.com,sim\nPedro Costa,85987654321,pedro@email.com,sim\nAna Oliveira,(11) 8765-4321,ana@email.com,sim';
+    const template = 'nome,telefone,email,assinatura\nJoão Silva,11987654321,joao@email.com,1\nMaria Santos,(21) 98765-4321,maria@email.com,1\nPedro Costa,85987654321,pedro@email.com,1\nAna Oliveira,(11) 8765-4321,ana@email.com,1';
     const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -355,19 +355,13 @@ export const ImportView: React.FC = () => {
                 </li>
                 <li className="flex items-center space-x-2">
                   <Badge variant="secondary" className="text-xs">assinatura</Badge>
-                  <span className="text-sm">ou <code>signature</code> - <code>sim</code> (ativo) ou <code>não</code> (inativo). Padrão: <code>sim</code></span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-muted p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Exemplo de arquivo:</h4>
-              <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto">
+                  <span className="text-sm">ou <code>signature</code> - <code>1</code> (ativo) ou <code>0</code> (inativo). Padrão: <code>1</code></span>
+...
                 <div className="text-green-600">nome,telefone,email,assinatura</div>
-                <div>João Silva,11987654321,joao@email.com,sim</div>
-                <div>Maria Santos,(21) 98765-4321,maria@email.com,sim</div>
-                <div>Pedro Costa,85987654321,pedro@email.com,sim</div>
-                <div>Ana Oliveira,(11) 8765-4321,ana@email.com,sim</div>
+                <div>João Silva,11987654321,joao@email.com,1</div>
+                <div>Maria Santos,(21) 98765-4321,maria@email.com,1</div>
+                <div>Pedro Costa,85987654321,pedro@email.com,1</div>
+                <div>Ana Oliveira,(11) 8765-4321,ana@email.com,1</div>
               </div>
               <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
                 <p className="font-medium text-blue-800 mb-1">Formatos de telefone aceitos:</p>
