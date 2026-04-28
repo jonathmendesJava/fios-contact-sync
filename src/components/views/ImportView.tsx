@@ -369,16 +369,6 @@ export const ImportView: React.FC = () => {
                 <div>Pedro Costa,85987654321,pedro@email.com,sim</div>
                 <div>Ana Oliveira,(11) 8765-4321,ana@email.com,sim</div>
               </div>
-
-            <div className="bg-muted p-4 rounded-lg">
-              <h4 className="font-medium mb-2">Exemplo de arquivo:</h4>
-              <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto">
-                <div className="text-green-600">nome,telefone,email,assinatura</div>
-                <div>João Silva,11987654321,joao@email.com,Obrigado!</div>
-                <div>Maria Santos,(21) 98765-4321,maria@email.com,Atenciosamente</div>
-                <div>Pedro Costa,85987654321,pedro@email.com,Até mais!</div>
-                <div>Ana Oliveira,(11) 8765-4321,ana@email.com,Cordialmente</div>
-              </div>
               <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
                 <p className="font-medium text-blue-800 mb-1">Formatos de telefone aceitos:</p>
                 <div className="space-y-1 text-blue-700">
