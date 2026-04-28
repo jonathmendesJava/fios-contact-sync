@@ -261,7 +261,7 @@ export const ImportView: React.FC = () => {
               name: contact.name,
               phone: contact.phone,
               email: contact.email || null,
-              signature: 1, // Sempre ativo por padrão
+              signature: contact.signature ?? 1,
               group_id: selectedGroup,
               user_id: (await supabase.auth.getUser()).data.user!.id,
             }]);
