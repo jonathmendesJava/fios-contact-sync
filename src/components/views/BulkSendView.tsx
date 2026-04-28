@@ -162,15 +162,11 @@ export const BulkSendView = () => {
     setDebugLog([]);
   };
 
-  // Enhanced webhook URL validation
+  // Webhook URL validation - accepts any valid http(s) URL
   const isValidWebhookUrl = (url: string) => {
     try {
       const parsed = new URL(url);
-      const isHttps = parsed.protocol === 'https:';
-      const isMakeDomain = url.includes('make.com') || url.includes('integromat.com');
-      const hasHookPath = url.includes('/hook/') || url.includes('/webhook/');
-      
-      return isHttps && (isMakeDomain || hasHookPath);
+      return parsed.protocol === 'https:' || parsed.protocol === 'http:';
     } catch {
       return false;
     }
