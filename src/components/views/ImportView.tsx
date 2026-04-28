@@ -355,10 +355,20 @@ export const ImportView: React.FC = () => {
                 </li>
                 <li className="flex items-center space-x-2">
                   <Badge variant="secondary" className="text-xs">assinatura</Badge>
-                  <span className="text-sm">ou <code>signature</code> - Mensagem personalizada</span>
+                  <span className="text-sm">ou <code>signature</code> - <code>sim</code> (ativo) ou <code>não</code> (inativo). Padrão: <code>sim</code></span>
                 </li>
               </ul>
             </div>
+
+            <div className="bg-muted p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Exemplo de arquivo:</h4>
+              <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto">
+                <div className="text-green-600">nome,telefone,email,assinatura</div>
+                <div>João Silva,11987654321,joao@email.com,sim</div>
+                <div>Maria Santos,(21) 98765-4321,maria@email.com,sim</div>
+                <div>Pedro Costa,85987654321,pedro@email.com,sim</div>
+                <div>Ana Oliveira,(11) 8765-4321,ana@email.com,sim</div>
+              </div>
 
             <div className="bg-muted p-4 rounded-lg">
               <h4 className="font-medium mb-2">Exemplo de arquivo:</h4>
