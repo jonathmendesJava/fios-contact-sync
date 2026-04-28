@@ -1,1 +1,4 @@
 project_id = "iybczehahetesnykhgev"
+
+[functions.update-contact-signature]
+verify_jwt = false
