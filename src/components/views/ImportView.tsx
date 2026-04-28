@@ -356,7 +356,10 @@ export const ImportView: React.FC = () => {
                 <li className="flex items-center space-x-2">
                   <Badge variant="secondary" className="text-xs">assinatura</Badge>
                   <span className="text-sm">ou <code>signature</code> - <code>1</code> (ativo) ou <code>0</code> (inativo). Padrão: <code>1</code></span>
-...
+                </li>
+              </ul>
+              <h4 className="font-medium mb-2 mt-4">Exemplo de arquivo:</h4>
+              <div className="bg-muted p-3 rounded font-mono text-xs space-y-1">
                 <div className="text-green-600">nome,telefone,email,assinatura</div>
                 <div>João Silva,11987654321,joao@email.com,1</div>
                 <div>Maria Santos,(21) 98765-4321,maria@email.com,1</div>
