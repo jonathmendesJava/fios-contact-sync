@@ -108,11 +108,20 @@ export const ImportView: React.FC = () => {
       }
 
       if (values[nameIndex] && values[phoneIndex]) {
+        let signatureValue = 1; // padrão "sim"
+        if (signatureIndex !== -1 && values[signatureIndex] !== undefined) {
+          const raw = values[signatureIndex].trim().toLowerCase();
+          if (['nao', 'não', 'no', '0', 'false', 'inativo'].includes(raw)) {
+            signatureValue = 0;
+          } else if (['sim', 'yes', '1', 'true', 'ativo'].includes(raw)) {
+            signatureValue = 1;
+          }
+        }
         data.push({
           name: values[nameIndex],
           phone: values[phoneIndex],
           email: emailIndex !== -1 ? values[emailIndex] : undefined,
-          signature: 1 // Sempre ativo por padrão
+          signature: signatureValue,
         });
       }
     }
