@@ -301,8 +301,8 @@ export const ImportView: React.FC = () => {
   };
 
   const downloadTemplate = () => {
-    const template = 'nome,telefone,email,assinatura\nJoão Silva,11987654321,joao@email.com,Obrigado pelo contato!\nMaria Santos,(21) 98765-4321,maria@email.com,Atenciosamente\nPedro Costa,85987654321,pedro@email.com,Até mais!\nAna Oliveira,(11) 8765-4321,ana@email.com,Cordialmente';
-    const blob = new Blob([template], { type: 'text/csv' });
+    const template = 'nome,telefone,email,assinatura\nJoão Silva,11987654321,joao@email.com,sim\nMaria Santos,(21) 98765-4321,maria@email.com,sim\nPedro Costa,85987654321,pedro@email.com,sim\nAna Oliveira,(11) 8765-4321,ana@email.com,sim';
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
