@@ -108,11 +108,20 @@ export const ImportView: React.FC = () => {
       }
 
       if (values[nameIndex] && values[phoneIndex]) {
+        let signatureValue = 1; // padrão "sim"
+        if (signatureIndex !== -1 && values[signatureIndex] !== undefined) {
+          const raw = values[signatureIndex].trim().toLowerCase();
+          if (['nao', 'não', 'no', '0', 'false', 'inativo'].includes(raw)) {
+            signatureValue = 0;
+          } else if (['sim', 'yes', '1', 'true', 'ativo'].includes(raw)) {
+            signatureValue = 1;
+          }
+        }
         data.push({
           name: values[nameIndex],
           phone: values[phoneIndex],
           email: emailIndex !== -1 ? values[emailIndex] : undefined,
-          signature: 1 // Sempre ativo por padrão
+          signature: signatureValue,
         });
       }
     }
@@ -252,7 +261,7 @@ export const ImportView: React.FC = () => {
               name: contact.name,
               phone: contact.phone,
               email: contact.email || null,
-              signature: 1, // Sempre ativo por padrão
+              signature: contact.signature ?? 1,
               group_id: selectedGroup,
               user_id: (await supabase.auth.getUser()).data.user!.id,
             }]);
@@ -292,8 +301,8 @@ export const ImportView: React.FC = () => {
   };
 
   const downloadTemplate = () => {
-    const template = 'nome,telefone,email,assinatura\nJoão Silva,11987654321,joao@email.com,Obrigado pelo contato!\nMaria Santos,(21) 98765-4321,maria@email.com,Atenciosamente\nPedro Costa,85987654321,pedro@email.com,Até mais!\nAna Oliveira,(11) 8765-4321,ana@email.com,Cordialmente';
-    const blob = new Blob([template], { type: 'text/csv' });
+    const template = 'nome,telefone,email,assinatura\nJoão Silva,11987654321,joao@email.com,sim\nMaria Santos,(21) 98765-4321,maria@email.com,sim\nPedro Costa,85987654321,pedro@email.com,sim\nAna Oliveira,(11) 8765-4321,ana@email.com,sim';
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -346,7 +355,7 @@ export const ImportView: React.FC = () => {
                 </li>
                 <li className="flex items-center space-x-2">
                   <Badge variant="secondary" className="text-xs">assinatura</Badge>
-                  <span className="text-sm">ou <code>signature</code> - Mensagem personalizada</span>
+                  <span className="text-sm">ou <code>signature</code> - <code>sim</code> (ativo) ou <code>não</code> (inativo). Padrão: <code>sim</code></span>
                 </li>
               </ul>
             </div>
@@ -355,10 +364,10 @@ export const ImportView: React.FC = () => {
               <h4 className="font-medium mb-2">Exemplo de arquivo:</h4>
               <div className="bg-background p-3 rounded border font-mono text-xs overflow-x-auto">
                 <div className="text-green-600">nome,telefone,email,assinatura</div>
-                <div>João Silva,11987654321,joao@email.com,Obrigado!</div>
-                <div>Maria Santos,(21) 98765-4321,maria@email.com,Atenciosamente</div>
-                <div>Pedro Costa,85987654321,pedro@email.com,Até mais!</div>
-                <div>Ana Oliveira,(11) 8765-4321,ana@email.com,Cordialmente</div>
+                <div>João Silva,11987654321,joao@email.com,sim</div>
+                <div>Maria Santos,(21) 98765-4321,maria@email.com,sim</div>
+                <div>Pedro Costa,85987654321,pedro@email.com,sim</div>
+                <div>Ana Oliveira,(11) 8765-4321,ana@email.com,sim</div>
               </div>
               <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
                 <p className="font-medium text-blue-800 mb-1">Formatos de telefone aceitos:</p>
